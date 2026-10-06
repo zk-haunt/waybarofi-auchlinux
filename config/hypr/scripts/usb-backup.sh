@@ -52,6 +52,19 @@ for a in "$@"; do
         *) MOUNT="$a" ;;
     esac
 done
+# Validate the SUBCOMMAND before touching mount detection. Previously the mount
+# checks ran first, so with no drive plugged in every invocation — including a
+# typo or no arguments at all — died with "No USB drive found" and the usage
+# branch at the bottom was unreachable.
+case "$cmd" in
+    backup|restore|list) ;;
+    *)
+        echo "usage: usb-backup.sh backup|restore|list [/mount/point] [--mirror]"
+        [ -n "$cmd" ] && echo "unknown command: $cmd" >&2
+        exit 1
+        ;;
+esac
+
 [ -z "$MOUNT" ] && MOUNT="$(autodetect_mount)"
 [ -z "$MOUNT" ] && die "No USB drive found under /run/media/$USER — plug one in or pass a path."
 [ -d "$MOUNT" ] || die "Mount point '$MOUNT' does not exist."
@@ -61,7 +74,15 @@ case "$cmd" in
     backup)
         mkdir -p "$DEST" || die "Cannot write to $DEST (is the drive read-only?)"
         build_rsync_args
-        note "Backing up to $DEST ${MIRROR:+(mirror mode)}…"
+        # NOT ${MIRROR:+...} — that expands whenever MIRROR is set and non-EMPTY,
+        # and MIRROR=0 is non-empty, so the old version claimed "(mirror mode)"
+        # on every run. The behaviour was correct (no --delete), but the label
+        # told you your backup was mirroring when it was not.
+        if [ "$MIRROR" = 1 ]; then
+            note "Backing up to $DEST (mirror mode — deletes files not in \$HOME)…"
+        else
+            note "Backing up to $DEST (additive; pass --mirror to delete extras)…"
+        fi
         for item in "${INCLUDE[@]}"; do
             src="$HOME/$item"
             [ -e "$src" ] || continue
@@ -85,7 +106,13 @@ case "$cmd" in
     list)
         [ -d "$DEST" ] || die "No backup found at $DEST"
         cat "$DEST/.last-backup" 2>/dev/null
-        du -sh "$DEST"/* 2>/dev/null
+        # `"$DEST"/*` does NOT match dotfiles, and almost the entire backup set
+        # is dotfiles (.config, .local/share, .ssh, .gnupg, .zshrc) — so the old
+        # version listed next to nothing and looked like a near-empty backup.
+        # find+maxdepth covers hidden entries without needing shell globbing,
+        # and -not -name '.last-backup' keeps the stamp out of the size list.
+        find "$DEST" -mindepth 1 -maxdepth 1 -not -name '.last-backup' -print0 2>/dev/null \
+            | sort -z | xargs -0r du -sh 2>/dev/null
         ;;
     *)
         echo "usage: usb-backup.sh backup|restore|list [/mount/point] [--mirror]"

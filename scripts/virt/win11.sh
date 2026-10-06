@@ -11,7 +11,8 @@
 # Usage:
 #   ./win11.sh drivers                  # download the virtio-win driver ISO
 #   ./win11.sh create <win11.iso>       # create & boot the VM from your Win11 ISO
-#   ./win11.sh destroy                  # delete the VM and its disk
+#   ./win11.sh destroy                  # delete the VM and its disk (asks first)
+#   ./win11.sh destroy --yes            # same, skipping the confirmation
 #
 # Get the Win11 ISO ("Download Windows 11 Disk Image") from:
 #   https://www.microsoft.com/software-download/windows11
@@ -82,6 +83,37 @@ EOT
 }
 
 destroy() {
+    local force="${1:-}"
+
+    if ! virsh --connect qemu:///system dominfo "$VM_NAME" &>/dev/null; then
+        echo "No VM named '$VM_NAME' is defined — nothing to remove."
+        return 0
+    fi
+
+    # --remove-all-storage is unrecoverable and a Win11 guest accumulates real
+    # state (installed apps, licence activation, documents), unlike the
+    # throwaway archtest VM. So require the word "yes" typed in full: a stray
+    # Enter or a mistyped `y` must not wipe a 64G disk.
+    # Same guard shape as config/hypr/scripts/usb-backup.sh:78-79, which is the
+    # repo's existing convention for an irreversible action.
+    if [[ "$force" != "--yes" && "$force" != "-y" ]]; then
+        echo "About to PERMANENTLY delete VM '$VM_NAME' and all of its storage:"
+        echo
+        virsh --connect qemu:///system domblklist "$VM_NAME" 2>/dev/null | sed '1,2d' | while read -r target source; do
+            [[ -n "${source:-}" && "$source" != "-" ]] || continue
+            printf '    %-8s %s' "$target" "$source"
+            [[ -f "$source" ]] && printf '  (%s)' "$(du -h "$source" 2>/dev/null | cut -f1)"
+            printf '\n'
+        done
+        echo
+        echo "This cannot be undone."
+        read -rp 'Type "yes" to confirm: ' reply
+        if [[ "$reply" != "yes" ]]; then
+            echo "Aborted — nothing was removed."
+            return 1
+        fi
+    fi
+
     virsh --connect qemu:///system destroy "$VM_NAME" >/dev/null 2>&1 || true
     virsh --connect qemu:///system undefine "$VM_NAME" --nvram --remove-all-storage
     echo "VM '$VM_NAME' and its disk removed."
@@ -90,6 +122,9 @@ destroy() {
 case "${1:-}" in
     drivers) drivers ;;
     create)  shift; create "${1:-}" ;;
-    destroy) destroy ;;
-    *) sed -n '3,18p' "$0"; exit 1 ;;
+    destroy) shift; destroy "${1:-}" ;;
+    # Print the header comment block as usage. Driven by "is it a comment?"
+    # rather than a hardcoded line range, which silently truncates the moment
+    # anyone adds a usage line above.
+    *) awk 'NR>2 { if (/^#/) print; else exit }' "$0"; exit 1 ;;
 esac

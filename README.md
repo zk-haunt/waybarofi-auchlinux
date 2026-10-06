@@ -156,25 +156,45 @@ Re-running `apply-config.sh` by hand is only needed after you edit something in
 
 ---
 
+## 🛠 Manual upkeep
+
+Three jobs stay manual on purpose — firmware updates, reading Arch news when an
+upgrade stops, and the occasional security audit. Steps for each are in
+[`manual.md`](manual.md).
+
+---
+
 ## 🧩 Optional setups
 
 Independent of each other, run whenever — after the steps above.
 
 | Script | What it sets up |
 |---|---|
-| [`scripts/harden-dns-firewall.sh`](scripts/harden-dns-firewall.sh) | Encrypted DNS (DoT + DNSSEC) and the nftables firewall. See [`dns-firewall.md`](dns-firewall.md). |
+| [`scripts/harden-dns.sh`](scripts/harden-dns.sh) | Encrypted DNS (DoT + DNSSEC). Firewall is ufw now, set up by `harden-system.sh` (next row). |
+| [`scripts/harden-system.sh`](scripts/harden-system.sh) | System hardening, run by `install-packages.sh` step 9: ufw (default-deny + LocalSend ports), sysctl, coredumps off, removable-media options, unused kernel modules blocked, auditd with a small ruleset, time sync, `/boot` root-only, fwupd metadata refresh, informant news gate. Configs live in [`config/etc/`](config/etc/). Re-run it after editing anything there. |
+| [`scripts/zram.sh`](scripts/zram.sh) | Compressed swap in RAM (zram), zswap off. Run by `install-packages.sh` step 11; `--status` / `--revert` to inspect or undo. |
+| [`malware-scan.timer`](config/systemd/user/malware-scan.timer) | Weekly CVE + AUR-integrity scan (`scripts/malware-scanner.sh --quiet`); a notification only when something needs attention. Enabled by `apply-config.sh`. |
 | [`scripts/virt/virt-manager.sh`](scripts/virt/virt-manager.sh) | QEMU/KVM + virt-manager. `virt/kvm.sh` then builds throwaway VMs. |
 | [`scripts/steam/steam.sh`](scripts/steam/steam.sh) | Steam + Vulkan GPU drivers. |
-| [`scripts/zen/deploy-zen-config.sh`](scripts/zen/deploy-zen-config.sh) | Zen Browser userChrome CSS + prefs. Extensions stay manual. |
 | [`scripts/easyeffects/easyeffects.sh`](scripts/easyeffects/easyeffects.sh) | EasyEffects audio EQ + presets. |
 | [`scripts/vpn/vpn.sh`](scripts/vpn/README.md) | WireGuard VPN + waybar indicator. |
 | [`scripts/vtube/vtube.sh`](scripts/vtube/README.md) | VTube face-tracking pipeline. |
 
 > [!NOTE]
-> **Firewall + VMs + LocalSend.** `harden-dns-firewall.sh` installs the *base*
-> ruleset (`config/etc/nftables.conf`), which is default-drop inbound. It has no
-> allowances for libvirt guests or LocalSend, so VMs get no DHCP lease and
-> LocalSend transfers never arrive. For those, install
-> `config/etc/nftables.virt-localsend.conf` over `/etc/nftables.conf` instead.
-> Note also that `systemctl restart nftables` flushes libvirt's own tables —
-> follow it with `sudo virsh net-destroy default && sudo virsh net-start default`.
+> **Firewall + VMs + LocalSend.** The firewall is **ufw** as of 2026-10-02; the
+> two `config/etc/nftables*.conf` rulesets were deleted (they live on in git
+> history if ever needed). ufw defaults to deny-inbound, which means
+> LocalSend gets no transfers and libvirt guests get no DHCP lease until you
+> open them explicitly:
+>
+> ```
+> sudo ufw allow 53317/tcp && sudo ufw allow 53317/udp   # LocalSend
+> ```
+>
+> libvirt guests additionally need `DEFAULT_FORWARD_POLICY="ACCEPT"` in
+> `/etc/default/ufw`, since ufw drops FORWARD.
+> The same caveat as before carries over: reloading the firewall rebuilds the
+> netfilter tables and drops libvirt's own chains, so after `sudo ufw reload`
+> (or `disable`/`enable`) run
+> `sudo virsh net-destroy default && sudo virsh net-start default` to put them
+> back.

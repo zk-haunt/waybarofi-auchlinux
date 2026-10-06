@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 # Rofi camera menu (Super+Alt+C): physical webcam + phone-as-webcam actions.
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 theme="$HOME/.config/rofi/launcher/style.rasi"
 S="$HOME/.config/hypr/scripts"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local home = os.getenv("HOME") or "/home/newpr"
+local home = os.getenv("HOME") or os.getenv("USERPROFILE") or "/root"
 local rofi_launcher_dir = home .. "/.config/rofi/launcher"
 local mode_file = rofi_launcher_dir .. "/rofi_theme_mode"
 

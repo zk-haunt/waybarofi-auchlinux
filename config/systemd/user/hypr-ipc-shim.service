@@ -1,0 +1,33 @@
+[Unit]
+# Translates waybar's legacy Hyprland dispatch calls into the Lua form.
+#
+# Waybar has "dispatch workspace N" compiled in (confirmed by running `strings`
+# over the binary). Hyprland 0.56 with a Lua config parses dispatch arguments as
+# Lua, so that string is a syntax error and every workspace pill click was a
+# silent no-op — for ALL workspaces, not just empty ones.
+#
+# Fixing it in waybar's config is not possible: "activate" is the only on-click
+# token that module honours, and pointing it at a shell command makes waybar
+# attach no handler at all (proven with an invocation log that stayed empty, and
+# visible as the pointer cursor disappearing from the pills). Hyprland has no
+# legacy-dispatch compatibility option, and waybar 0.15.0-3 is the newest in the
+# repos. Replacing the module with custom pills works but changes the bar's
+# appearance, which was the one constraint.
+#
+# So the translation happens in the transport instead, and waybar's config and
+# CSS stay byte-identical.
+Description=Hyprland IPC shim (legacy dispatch -> Lua) for waybar
+Documentation=file:%h/.config/hypr/scripts/hypr-ipc-shim.py
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/hypr/scripts/hypr-ipc-shim.py
+Restart=on-failure
+RestartSec=2
+# Pure plumbing over a unix socket, holding no state, so a restart is always
+# safe — clients reconnect on their next request.
+
+[Install]
+WantedBy=graphical-session.target

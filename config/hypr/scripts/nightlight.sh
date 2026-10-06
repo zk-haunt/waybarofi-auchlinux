@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
 # ── Constants ─────────────────────────────────────────────────
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 TEMP="${NIGHTLIGHT_TEMP:-4000}"       # Default colour temp (K)
 GAMMA="${NIGHTLIGHT_GAMMA:-80}"       # Default gamma (%)
 RESET_TEMP=6500                       # Neutral daylight temp for reset
@@ -53,7 +61,7 @@ stop_nightlight() {
 }
 
 # ── Commands ──────────────────────────────────────────────────
-case "$1" in
+case "${1:-}" in
     toggle)
         ensure_state
         state=$(cat "$STATE_FILE")
@@ -69,7 +77,7 @@ case "$1" in
         # Usage: nightlight.sh set <temp_K> [gamma_%]
         # Example: nightlight.sh set 3200
         #          nightlight.sh set 3200 70
-        if [[ -z "$2" ]]; then
+        if [[ -z "${2:-}" ]]; then
             printf 'Usage: %s set <temp_K> [gamma_%%]\n' "$0" >&2
             exit 1
         fi

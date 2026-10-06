@@ -1,16 +1,24 @@
 /**
+ * Colour scheme selector for the launcher themes.
  *
- * Author : Aditya Shakya (adi1090x)
- * Github : @adi1090x
- * 
- * Colors
+ * Original header by Aditya Shakya (adi1090x), @adi1090x.
  *
- * Available Colors Schemes
+ * The @import at the bottom picks ONE scheme. Everything in
+ * config/rofi/colors/ is a drop-in alternative — change that single line
+ * to switch. There is no picker script for these; the previous header
+ * listed them as "Available Colors Schemes" which read as if something
+ * selected them automatically, and it also omitted tokyonight.
  *
- * adapta    catppuccin    everforest    navy       paper
- * arc       cyberpunk     gruvbox       nord       solarized
- * black     dracula       lovelace      onedark    yousai
+ * Currently active: colors-matugen.rasi, which matugen regenerates from the
+ * wallpaper — so the bar, launcher, terminal and notifications stay in step.
+ * Switching to a static scheme below means the launcher stops following the
+ * wallpaper.
  *
+ * Static schemes available:
+ * adapta         arc            black          catppuccin
+ * cyberpunk      dracula        everforest     gruvbox
+ * lovelace       navy           nord           onedark
+ * paper          solarized      tokyonight     yousai
  **/
 
 /* Import color-scheme from `colors` directory */

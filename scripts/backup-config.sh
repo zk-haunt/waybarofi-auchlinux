@@ -5,7 +5,16 @@ set -euo pipefail
 SNAPSHOT_DIR="$HOME/.cache/snapshots"
 mkdir -p "$SNAPSHOT_DIR"
 
-REPO_DIR="/home/newpr/auchlinux"
+# Derive the repo from this script's own location ($REPO/scripts/backup-config.sh)
+# rather than hardcoding a path. The old hardcoded /home/newpr/auchlinux silently
+# skipped the repo half of every snapshot for any other user.
+REPO_DIR="$(cd -- "$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")/.." && pwd)"
+
+# Snapshots are extracted with `tar -xzf -C /`, so the paths *inside* the tarball
+# have to match the real home they will be restored into. Build them from $HOME
+# instead of a literal username, or a restore lands in some other user's home.
+REL_HOME="${HOME#/}"          # onmeds   -> home/onmeds
+TAR_ROOT="${REL_HOME%%/*}"    # home/onmeds -> home  (root -> root)
 
 get_snapshots() {
   find "$SNAPSHOT_DIR" -maxdepth 1 -name "*.tar.gz" -printf "%T@ %p\n" | sort -n -r | awk '{print $2}'
@@ -41,8 +50,8 @@ create_snapshot() {
   local TEMP_DIR
   TEMP_DIR=$(mktemp -d)
   
-  mkdir -p "$TEMP_DIR/home/newpr/.config"
-  mkdir -p "$TEMP_DIR/home/newpr/auchlinux/config"
+  mkdir -p "$TEMP_DIR/$REL_HOME/.config"
+  mkdir -p "$TEMP_DIR/$REL_HOME/$(basename "$REPO_DIR")/config"
   
   # Sync configs excluding large cached folders
   rsync --archive \
@@ -57,13 +66,13 @@ create_snapshot() {
     --exclude="Code" \
     --exclude="VSCodium" \
     --exclude="*.bak-*" \
-    "$HOME/.config/" "$TEMP_DIR/home/newpr/.config/"
-    
+    "$HOME/.config/" "$TEMP_DIR/$REL_HOME/.config/"
+
   if [[ -d "$REPO_DIR/config" ]]; then
-    rsync --archive "$REPO_DIR/config/" "$TEMP_DIR/home/newpr/auchlinux/config/"
+    rsync --archive "$REPO_DIR/config/" "$TEMP_DIR/$REL_HOME/$(basename "$REPO_DIR")/config/"
   fi
-  
-  tar -czf "$filepath" -C "$TEMP_DIR" home
+
+  tar -czf "$filepath" -C "$TEMP_DIR" "$TAR_ROOT"
   rm -rf "$TEMP_DIR"
   
   local size

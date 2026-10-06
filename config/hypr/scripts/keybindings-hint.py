@@ -188,9 +188,6 @@ def main():
         "hl.dsp.focus({ direction = \"down\" })": "Focus Window (Down)",
         "hl.dsp.focus({ workspace = \"e+1\" })": "Switch to Next Workspace",
         "hl.dsp.focus({ workspace = \"e-1\" })": "Switch to Previous Workspace",
-        "hyprctl dispatch hyprexpo:expo toggle": "Toggle Workspace Grid Overview",
-        "hyprctl dispatch hyprbars:toggle": "Toggle Window Titlebars",
-        "hyprctl dispatch hyprspace:overview toggle": "Toggle GNOME-like Overview",
     }
 
     # Generate the Rofi entries list

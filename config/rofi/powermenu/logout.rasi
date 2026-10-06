@@ -26,11 +26,14 @@ mainbox {
     spacing: 0px;
     margin: 35% 10%;
     background-color: transparent;
-    children: [ "inputbar", "listview" ];
+    children: [ "listview" ];
 }
 
-/* Invisible-but-functional input — lets you type to filter (l→Lock, s→Shutdown,
-   log→Logout, su→Suspend) while keeping the icon-row look unchanged. */
+/* Kept defined but dropped from mainbox's children below: the menu rows are
+   bare icons now, so there is no label text left to type-filter against and a
+   live entry would only let a stray keystroke filter the row down to nothing.
+   Navigation is arrow keys + Enter. To restore type-to-filter, put "inputbar"
+   back in mainbox { children } and give each row its label text again. */
 inputbar {
     enabled: true;
     font: "JetBrainsMono Nerd Font 1";

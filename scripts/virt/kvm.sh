@@ -10,7 +10,8 @@
 #   ./kvm.sh create               # create & boot the "archtest" UEFI VM from the Arch ISO
 #   ./kvm.sh create <iso> [name]  # create & boot a VM from ANY other ISO (name is
 #                                  # derived from the filename if you don't give one)
-#   ./kvm.sh destroy [name]        # delete a VM and its disk (default: archtest)
+#   ./kvm.sh destroy [name]        # delete a VM and its disk (asks first; default: archtest)
+#   ./kvm.sh destroy [name] --yes  # same, skipping the confirmation
 #
 # Optional spec flags for `create` (defaults: 4G RAM, 4 vCPUs, 40G disk).
 # They can go before or after the ISO/name arguments:
@@ -154,7 +155,47 @@ create() {
 }
 
 destroy() {
-    local name="${1:-$VM_NAME}"
+    local name="" force="" arg reply
+
+    # Name and flag in either order, matching `create` above, which already takes
+    # its spec flags on either side of the ISO/name arguments.
+    for arg in "$@"; do
+        case "$arg" in
+            --yes|-y) force=1 ;;
+            "")       ;;
+            *)        name="$arg" ;;
+        esac
+    done
+    name="${name:-$VM_NAME}"
+
+    if ! virsh --connect qemu:///system dominfo "$name" &>/dev/null; then
+        echo "No VM named '$name' is defined — nothing to remove."
+        return 0
+    fi
+
+    # Same typed-"yes" guard as win11.sh:99-114. The default archtest VM genuinely is
+    # throwaway, so a prompt looks like pure friction here — but this takes a NAME, so
+    # `destroy <name>` reaches any domain on the host, and --remove-all-storage is
+    # unrecoverable. The keystroke that earns its place is the one that stops a
+    # mistyped name from eating a real VM. Pass --yes in installer-test loops.
+    if [[ -z "$force" ]]; then
+        echo "About to PERMANENTLY delete VM '$name' and all of its storage:"
+        echo
+        virsh --connect qemu:///system domblklist "$name" 2>/dev/null | sed '1,2d' | while read -r target source; do
+            [[ -n "${source:-}" && "$source" != "-" ]] || continue
+            printf '    %-8s %s' "$target" "$source"
+            [[ -f "$source" ]] && printf '  (%s)' "$(du -h "$source" 2>/dev/null | cut -f1)"
+            printf '\n'
+        done
+        echo
+        echo "This cannot be undone."
+        read -rp 'Type "yes" to confirm: ' reply
+        if [[ "$reply" != "yes" ]]; then
+            echo "Aborted — nothing was removed."
+            return 1
+        fi
+    fi
+
     virsh --connect qemu:///system destroy "$name" >/dev/null 2>&1 || true
     virsh --connect qemu:///system undefine "$name" --nvram --remove-all-storage
     echo "VM '$name' and its disk removed."
@@ -164,6 +205,8 @@ case "${1:-setup}" in
     setup)   setup ;;
     iso)     iso ;;
     create)  shift; create "$@" ;;
-    destroy) shift; destroy "${1:-}" ;;
-    *) sed -n '3,25p' "$0"; exit 1 ;;
+    destroy) shift; destroy "$@" ;;
+    # Header comment block as usage, matched on "is it a comment?" rather than a
+    # hardcoded line range — the range truncates as soon as a usage line is added.
+    *) awk 'NR>2 { if (/^#/) print; else exit }' "$0"; exit 1 ;;
 esac

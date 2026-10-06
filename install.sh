@@ -269,7 +269,12 @@ mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
 info "Mounting..."
 mount /dev/mapper/cryptroot /mnt
 mkdir -p /mnt/boot
-mount "$ESP" /mnt/boot
+# Root-only ESP. Without options, vfat mounts world-readable (fmask/dmask 0022)
+# and genfstab below copies whatever is mounted into fstab — which left every
+# user able to read systemd-boot's random seed, a hole bootctl itself warns
+# about. Mounting 0077 here means fstab is right from the first boot;
+# scripts/harden-system.sh only fixed it after the fact (and needed a reboot).
+mount -o fmask=0077,dmask=0077 "$ESP" /mnt/boot
 
 # ============================
 # INSTALL SYSTEM

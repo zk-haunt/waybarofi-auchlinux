@@ -103,6 +103,11 @@ fastfetch --config auch/*.jsonc
       "keyColor": "magenta"
     },
     {
+      "type": "swap",
+      "key": "  󰓡 Swap ",
+      "keyColor": "magenta"
+    },
+    {
       "type": "disk",
       "key": "  󱦟 OS Age ",
       "folders": "/",

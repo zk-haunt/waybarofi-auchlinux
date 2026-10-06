@@ -10,10 +10,30 @@
 # Single-instance guard. A pgrep check in the launcher can't work here:
 # pgrep -f matches the launcher's own sh -c command line, and pgrep -x never
 # matches because the env-shebang makes our comm "bash", not the script name.
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 exec 9>"${XDG_RUNTIME_DIR:-/tmp}/battery-monitor.lock"
 flock -n 9 || exit 0
 
-BAT=/sys/class/power_supply/BAT0
+# Pick the first real battery rather than assuming BAT0 — laptops vary (BAT1 is
+# common), so a hardcoded node makes this daemon a silent no-op on other
+# machines: the `-r` check below just `continue`s forever.
+BAT=""
+for _bat in /sys/class/power_supply/BAT*; do
+    if [[ -r "$_bat/capacity" && -r "$_bat/status" ]]; then
+        BAT="$_bat"
+        break
+    fi
+done
+# Desktops have no battery at all; nothing to monitor, so don't spin forever.
+[[ -n $BAT ]] || exit 0
+
 INTERVAL=30
 LOW=20
 CRIT=10

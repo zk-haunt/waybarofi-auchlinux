@@ -77,6 +77,11 @@
             "keyColor": "magenta"
         },
         {
+            "type": "swap",
+            "key": "  󰓡 Swap",
+            "keyColor": "magenta"
+        },
+        {
             "type": "uptime",
             "key": "  󱫐 Uptime",
             "keyColor": "red"

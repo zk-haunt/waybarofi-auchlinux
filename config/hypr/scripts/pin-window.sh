@@ -5,6 +5,14 @@
 # A window must be floating to be pinned, so float it first (only if it isn't
 # already — float() is a toggle), then toggle pin. Pinned windows stay visible
 # on every workspace.
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 win=$(hyprctl activewindow -j 2>/dev/null)
 [ -z "$win" ] && exit 0
 

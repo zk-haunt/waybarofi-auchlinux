@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local home = os.getenv("HOME") or "/home/newpr"
+local home = os.getenv("HOME") or os.getenv("USERPROFILE") or "/root"
 local mode_file = home .. "/.config/zsh/zsh_theme_mode"
 local starship_dir = home .. "/.config/starship"
 local fastfetch_dir = home .. "/.config/fastfetch"

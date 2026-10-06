@@ -81,6 +81,11 @@
              "type": "memory",
             "key": "  ﬙ Memory",
             "keyColor": "magenta"
+        },
+        {
+             "type": "swap",
+            "key": "  󰓡 Swap",
+            "keyColor": "magenta"
         },      
         {
             "type": "command",

@@ -1,0 +1,152 @@
+/* Yes/no confirmation for power-menu.sh.
+ *
+ * Geometry is derived from logout.rasi so the two buttons are the SAME SIZE as
+ * the five power-menu tiles, with the same font and the same dim backdrop — the
+ * confirm reads as a continuation of the menu rather than a different dialog.
+ *
+ * Why it needs its own file at all: logout.rasi declares `columns: 5`, so with
+ * only two entries rofi stretched them into screen-filling slabs.
+ *
+ * Keeping the tiles the same size:
+ *   logout.rasi uses 10% side margins and 5 columns at 30px spacing, so one
+ *   tile is (0.8W - 4*30) / 5. Two of those plus one 30px gap is ~596px on a
+ *   1920px screen, i.e. ~31% of the width — hence 34.5% side margins here.
+ *   Both are percentages, so the proportion holds at other resolutions.
+ *
+ * The tick/cross glyphs live in power-menu.sh, not here, so every icon in the
+ * power menu stays defined in exactly one place.
+ */
+
+configuration {
+    show-icons: false;
+    matching:   "normal";
+    cycle:      true;
+}
+
+@import "~/.config/rofi/colors/colors-matugen.rasi"
+
+* {
+    /* Same family and size as logout.rasi, so the tick and cross render at the
+       same scale as the lock/shutdown/restart glyphs. */
+    font: "JetBrainsMono Nerd Font Propo 32";
+}
+
+window {
+    transparency:     "real";
+    location:         center;
+    anchor:           center;
+    fullscreen:       true;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding:          0px;
+}
+
+mainbox {
+    /* Horizontal: the action name sits to the LEFT of the two tiles.
+       Width budget at 1920px: 300px prompt + 30px gap + (2 x 283px tiles +
+       30px gap) = 926px, i.e. ~48% of the screen, so ~26% margin per side.
+       The prompt has a fixed width (below) so the tiles stay the same size
+       whatever the action is called — "Shutdown" is wider than "Logout". */
+    orientation:      horizontal;
+    /* Vertical margin is sized so the mainbox is only as tall as one tile
+       (60px padding x2 + the ~45px glyph = ~165px of 1080 = ~15%). With a
+       taller box the listview sits top-aligned while the prompt centres, and
+       the label ends up below the tiles' midline. */
+/* Side margin solved from logout.rasi's own geometry, so the tiles match
+       the five-option menu at ANY resolution rather than only at 1920.
+
+         menu tile   = (0.8W - 4*30) / 5      = 0.16W - 24
+         listview    = 2*tile + 30            = 0.32W - 18
+         content     = 340 (label) + 30 + listview
+         margin      = (W - content) / 2      = 0.34W - 176
+
+       A plain percentage could not express this: the label is a fixed point
+       size, so its 340px is absolute while the tiles scale with the screen.
+       calc() is what lets both live in one value. Verified: 284px tiles against
+       the menu's 282px. */
+/* Top margin is logout.rasi's 35%, so the tiles sit on exactly the same
+       line as the five-option menu (verified: both render y 379..554, h175).
+       The bottom margin then caps the box at roughly one tile's height — if the
+       box is much taller the listview stays top-aligned while the prompt
+       centres, and the label drifts below the tiles; much shorter and the
+       listview collapses and the tiles vanish entirely. */
+    margin:           35% calc(34% - 176px) 47% calc(34% - 176px);
+    spacing:          30px;
+    padding:          0px;
+    background-color: transparent;
+    children:         [ "inputbar", "listview" ];
+}
+
+/* The prompt carries the action name ("Shutdown", "Restart", ...). No entry
+   widget: there is nothing to type, and a live entry would let a stray
+   keystroke filter both buttons away. */
+inputbar {
+    enabled:          true;
+    /* NOT expand:true — in a horizontal mainbox that makes the inputbar eat the
+       whole row and collapses the listview to zero width, so the buttons vanish
+       and only the prompt renders. Fixed width instead, so tile size is
+       independent of how long the action name is. */
+    /* Fixed width, deliberately. Two failure modes to avoid:
+         - natural width => the tiles resize per action (measured: 279px for
+           "Shutdown" vs 317px for "Logout"), which is not uniform;
+         - too small a fixed width => rofi does NOT clip an oversized textbox,
+           so the label overdraws the tiles. 300px did exactly that.
+       "Shutdown" is the longest label and renders ~305px at 48pt (rofi uses
+       Pango points, ~1.6x wider than the nominal pixel size), so 340px clears
+       it with margin. This is px rather than % on purpose: the font is a fixed
+       point size, so its box must be too — a percentage would overlap on a
+       narrower screen. */
+    expand:           false;
+    width:            340px;
+    /* Centre the label against the tiles. Without this the inputbar keeps its
+       natural text height and the label sits below the tiles' midline. */
+    vertical-align:   0.5;
+    padding:          0px;
+    margin:           0px;
+    background-color: transparent;
+    children:         [ "prompt" ];
+}
+
+prompt {
+    /* 1.5x the 32pt icon size. */
+    font:             "JetBrainsMono Nerd Font Propo 48";
+    background-color: transparent;
+    text-color:       rgba(255, 255, 255, 0.9);
+    horizontal-align: 0.0;
+    vertical-align:   0.5;
+    padding:          0px;
+}
+
+listview {
+    /* Two columns at logout.rasi's spacing, so the gap between tick and cross
+       equals the gap between the menu tiles. */
+    lines:            1;
+    columns:          2;
+    fixed-height:     true;
+    dynamic:          false;
+    scrollbar:        false;
+    spacing:          30px;
+    expand:           true;
+    background-color: transparent;
+}
+
+element {
+    /* Identical to logout.rasi's tiles. */
+    padding:          60px 0px;
+    border-radius:    20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    text-color:       rgba(255, 255, 255, 0.8);
+    cursor:           pointer;
+}
+
+element selected.normal {
+    background-color: @selected;
+    text-color:       @background;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    horizontal-align: 0.5;
+    vertical-align:   0.5;
+    cursor:           pointer;
+}

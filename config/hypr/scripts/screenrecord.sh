@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
 # Define paths
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 SAVE_DIR="${XDG_VIDEOS_DIR:-$HOME/Videos}/Recordings"
 mkdir -p "$SAVE_DIR"
 TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
@@ -36,7 +44,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 while [[ $# -gt 0 ]]; do
-    case "$1" in
+    case "${1:-}" in
         --menu|-m)
             MENU=true
             shift
@@ -71,7 +79,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             # support legacy positional f argument
-            if [[ "$1" == "f" ]]; then
+            if [[ "${1:-}" == "f" ]]; then
                 FULLSCREEN=true
             fi
             shift

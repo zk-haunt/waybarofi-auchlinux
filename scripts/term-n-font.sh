@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Terminal & Zsh Setup Script for newpr on Arch Linux
+#  Terminal & Zsh Setup Script for Arch Linux
 #  Run this after a fresh install to get the full themed shell & terminal experience.
 #  Includes: oh-my-zsh, autosuggestions, syntax-highlighting, Starship,
 #            theme switcher, custom Nerd Fonts, fzf, eza, fastfetch
@@ -196,12 +196,12 @@ fi
 # ─── 9c. Linking default Rofi theme config ──────────────────────────────────
 section "Linking default Rofi theme config"
 ROFI_THEME_FILE="$HOME/.config/rofi/launcher/rofi_theme_mode"
-ROFI_THEME_SRC="$HOME/.config/rofi/launcher/style_lol.rasi"
+ROFI_THEME_SRC="$HOME/.config/rofi/launcher/style_auch.rasi"
 ROFI_THEME_LINK="$HOME/.config/rofi/launcher/style.rasi"
 
 if [[ ! -f "$ROFI_THEME_FILE" ]]; then
-    echo "lol" > "$ROFI_THEME_FILE"
-    ok "Rofi theme mode set to: lol"
+    echo "auch" > "$ROFI_THEME_FILE"
+    ok "Rofi theme mode set to: auch"
 else
     ok "Rofi theme mode already set to: $(cat "$ROFI_THEME_FILE")"
 fi

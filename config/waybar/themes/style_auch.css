@@ -693,3 +693,34 @@ tooltip label {
     color: @text;
     padding: 2px 4px;
 }
+
+/* Mic-in-use badge (privacy module).
+
+   NOTE: this file already has #privacy rules near line 608, but they sit inside
+   the large commented-out block starting at line 505, so they never applied.
+   These are the live ones.
+
+   Distinct from #pulseaudio-microphone beside it in the status pill: that shows
+   the mic's configured VOLUME and mute state, this shows whether something is
+   ACTIVELY CAPTURING right now. A muted-looking icon says nothing about whether
+   an app is holding the stream open, which is the question that matters.
+
+   waybar renders nothing while idle, so it costs no bar space until a mic is in
+   use. Colour matches config_privacy.jsonc's audio-in badge. */
+#privacy {
+    padding: 0 2px;
+    margin: 4px 2px;
+}
+
+#privacy-item {
+    padding: 1px 7px;
+    margin: 2px 2px;
+    border-radius: 6px;
+    font-weight: 800;
+}
+
+#privacy-item.audio-in {
+    background-color: #d19a66;
+    color: #1e1e2e;
+    box-shadow: 0 0 8px rgba(209, 154, 102, 0.7);
+}

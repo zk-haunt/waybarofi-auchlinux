@@ -219,9 +219,33 @@
         "modules": [
             "pulseaudio",
             "pulseaudio#microphone",
+            "privacy",
             "temperature",
             "network",
             "custom/vpn"
+        ]
+    },
+    // Mic-in-use indicator, distinct from the pulseaudio#microphone module next
+    // to it: that one shows the mic's VOLUME and mute state, i.e. what you have
+    // configured. This shows whether something is ACTIVELY CAPTURING right now,
+    // which is the question that actually matters for privacy — a muted-looking
+    // icon tells you nothing about whether an app holds the stream open.
+    //
+    // Only `audio-in` here. The full privacy theme also carries screenshare and
+    // audio-out; on the everyday bar those are noisy (audio-out is lit whenever
+    // anything plays), whereas the mic is the one worth a persistent badge.
+    // `hide-empty-text` is implicit: waybar renders nothing when idle, so this
+    // costs no space until a mic is actually in use.
+    "privacy": {
+        "icon-spacing": 6,
+        "icon-size": 13,
+        "transition-duration": 250,
+        "modules": [
+            {
+                "type": "audio-in",
+                "tooltip": true,
+                "tooltip-icon-size": 24
+            }
         ]
     },
     "pulseaudio#microphone": {

@@ -5,6 +5,14 @@
 # using the SAME state the cmdline cycler (rofi-theme.lua) uses, so the visual
 # picker and `rofi-theme` stay in sync. Adapted from HyDE's rofiselect.sh; no
 # hyde-shell. Tiles live in launcher/previews/<name>.png.
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 launcherDir="$HOME/.config/rofi/launcher"
 previewDir="$launcherDir/previews"
 theme="$launcherDir/themeselect.rasi"   # mirrors the wallpaper picker grid

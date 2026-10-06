@@ -113,9 +113,11 @@ hl.bind("Print",                  hl.dsp.exec_cmd("~/.config/hypr/scripts/screen
 hl.bind(mainMod .. " + ALT + R", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenrecord.sh"))
 hl.bind(mainMod .. " + ALT + SHIFT + R", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenrecord.sh --fullscreen"))
 
--- Zoom
-hl.bind(mainMod .. " + ALT + mouse_down", hl.dsp.exec_cmd("hyprctl keyword cursor:zoom_factor \"$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor * 2.0}')\""))
-hl.bind(mainMod .. " + ALT + mouse_up", hl.dsp.exec_cmd("hyprctl keyword cursor:zoom_factor \"$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor / 2.0}')\""))
+-- Zoom. Lua functions rather than shelling out to `hyprctl keyword`, which this
+-- Hyprland rejects (non-legacy parser) — these binds did nothing before.
+hl.bind(mainMod .. " + ALT + mouse_down", luafunctions.zoom_in)
+hl.bind(mainMod .. " + ALT + mouse_up",   luafunctions.zoom_out)
+hl.bind(mainMod .. " + ALT + 0",          luafunctions.zoom_reset)
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -144,11 +146,13 @@ end
 hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
--- ── Hyprland Plugins ───────────────────────────────────────────
--- Hyprexpo  : workspace grid overview  (toggle with SUPER + A)
-hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("hyprctl dispatch hyprexpo:expo toggle"))
--- Hyprbars  : window title bars         (toggle with SUPER + B)
-hl.bind(mainMod .. " + B",     hl.dsp.exec_cmd("hyprctl dispatch hyprbars:toggle"))
+-- ── Overview & switcher ────────────────────────────────────────
+-- Workspace overview (Super + A). Was hyprexpo, which no longer exists:
+-- it was removed from hyprwm/hyprland-plugins upstream and Hyprland 0.56 has no
+-- native expo, so there was nothing to dispatch to. This is a rofi list built
+-- from `hyprctl workspaces`/`clients` instead — no plugin, so nothing to
+-- recompile after a Hyprland update.
+hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("~/.config/hypr/scripts/workspace-overview.sh"))
 -- Window switcher (rofi)   : toggle with SUPER + TAB
 hl.bind(mainMod .. " + Tab",   hl.dsp.exec_cmd("pkill -x rofi || rofi -show window -theme ~/.config/rofi/launcher/style.rasi"))
 
@@ -182,8 +186,17 @@ hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("~/.config/hypr/scripts/media.sh play-
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("~/.config/hypr/scripts/media.sh previous"),   { locked = true })
 
 -- ── New Feature Keybinds ────────────────────────────────────────
--- Super + N          → Toggle blue light filter (night mode)
-hl.bind(mainMod .. " + N",             hl.dsp.exec_cmd("~/.config/hypr/scripts/toggle-blue-light.sh"))
+-- REMOVED: this was a SECOND bind on Super+N, duplicating the nightlight.sh
+-- bind at the top of this file. It was harmless only because the shader it set
+-- went through `hyprctl keyword`, which this Hyprland rejects — so it silently
+-- did nothing. Making that script work (2026-10-02) turned the dead duplicate
+-- live, and Super+N started stacking a fragment shader on top of hyprsunset's
+-- gamma change, which flickers.
+--
+-- nightlight.sh is the better mechanism and the one to keep: hyprsunset sets a
+-- colour-transform matrix via hyprland-ctm-control (no shader compile, no
+-- re-render), and it also gives warmer/cooler/gamma steps and a waybar module.
+-- toggle-blue-light.sh and its shader were deleted 2026-10-02 as redundant.
 -- Super + Shift + A  → Pick animation preset via Rofi
 hl.bind(mainMod .. " + SHIFT + A",     hl.dsp.exec_cmd("~/.config/hypr/scripts/change-animation.sh"))
 -- Super + Shift + L  → Pick lock screen theme via Rofi

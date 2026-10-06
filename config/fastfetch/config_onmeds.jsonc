@@ -59,6 +59,11 @@
             "key": "mem ",
             "keyColor": "magenta"
         },
+        {
+            "type": "swap",
+            "key": "swp ",
+            "keyColor": "magenta"
+        },
         "break",
         {
             "type": "colors",

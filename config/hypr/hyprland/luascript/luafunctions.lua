@@ -4,9 +4,47 @@
 
 local M = {}
 
+-- Cursor zoom (Super+Alt+scroll).
+--
+-- Replaces two shell one-liners that did:
+--     hyprctl keyword cursor:zoom_factor "$(hyprctl getoption ... | awk ...)"
+-- `hyprctl keyword` is rejected outright by this Hyprland ("keyword can't work
+-- with non-legacy parsers. Use eval."), so Super+Alt+scroll did nothing at all.
+--
+-- Doing it in Lua removes the whole shell round-trip: no hyprctl fork, no
+-- getoption text parsing, no awk. hl.get_config returns the live number.
+local ZOOM_MIN, ZOOM_MAX = 1.0, 16.0
+
+local function set_zoom(factor)
+    -- Clamp: below 1.0 is meaningless and the compositor rejects it; an upper
+    -- bound stops a stuck scroll wheel zooming to absurdity.
+    if factor < ZOOM_MIN then factor = ZOOM_MIN end
+    if factor > ZOOM_MAX then factor = ZOOM_MAX end
+    hl.config({ cursor = { zoom_factor = factor } })
+end
+
+local function current_zoom()
+    -- get_config can return nil before the option has ever been set.
+    local z = tonumber(hl.get_config("cursor.zoom_factor")) or ZOOM_MIN
+    if z < ZOOM_MIN then z = ZOOM_MIN end
+    return z
+end
+
+function M.zoom_in()
+    set_zoom(current_zoom() * 2.0)
+end
+
+function M.zoom_out()
+    set_zoom(current_zoom() / 2.0)
+end
+
+function M.zoom_reset()
+    set_zoom(ZOOM_MIN)
+end
+
 -- Toggle Game Mode (Performance vs. Aesthetic Mode)
 function M.toggle_gamemode()
-    local home = os.getenv("HOME") or "/home/newpr"
+    local home = os.getenv("HOME") or os.getenv("USERPROFILE") or "/root"
     local anims = hl.get_config("animations.enabled")
     if anims then
         hl.config({
@@ -54,40 +92,39 @@ end
 -- zero gaps, all windows opaque, and — the bit you wanted — a layerrule that
 -- kills blur + animations on the rofi / waybar / notification layers too.
 function M.toggle_gamemode2()
-    local home = os.getenv("HOME") or "/home/newpr"
+    -- Game mode is the `gaming` workflow preset plus a waybar theme swap, so it
+    -- delegates to hyprland/workflows.lua rather than keeping a second copy of
+    -- the same values. That also stops Super+G and Super+Ctrl+W fighting each
+    -- other: both now drive the same rule names and the same value sets.
+    --
+    -- Why the OFF path no longer shells out to `hyprctl reload config-only`:
+    -- os.execute is SYNCHRONOUS and runs on the compositor's main thread, so the
+    -- old version blocked Hyprland inside a keybind handler while waiting on a
+    -- subprocess that itself needs the compositor to answer an IPC request. That
+    -- is the stall you saw when turning game mode off — ON was instant because it
+    -- was pure in-process Lua, OFF was not. Note every other os.execute here ends
+    -- with `&` for precisely this reason; the reload was the one that did not.
+    -- Restoring values directly keeps both directions in-process and instant.
+    local home = os.getenv("HOME") or os.getenv("USERPROFILE") or "/root"
     local rt   = os.getenv("XDG_RUNTIME_DIR") or "/tmp"
     local lock = rt .. "/hypr/gamemode.lck"
+
+    -- Load fresh so edits to workflows.lua take effect without a reload.
+    package.loaded["hyprland/workflows"] = nil
+    local workflows = require("hyprland/workflows")
+
     local f = io.open(lock, "r")
     if f then
         -- ── Game mode is ON → turn it OFF ────────────────────────────────
         f:close()
         os.remove(lock)
-        -- Restore the full config (clears the runtime config/layer/window rules).
-        os.execute("hyprctl reload config-only -q")
+        workflows.apply("default")
         os.execute(home .. "/.config/waybar/scripts/waybar-theme auch >/dev/null 2>&1 &")
         os.execute("notify-send -a 'Game Mode' -i 'dialog-information' -u low 'Game Mode' 'Aesthetic Mode Restored' &")
     else
         -- ── Game mode is OFF → turn it ON ────────────────────────────────
         os.execute("mkdir -p " .. rt .. "/hypr && touch " .. lock)
-        hl.config({
-            animations = { enabled = false },
-            general    = { gaps_in = 0, gaps_out = 0, border_size = 1 },
-            decoration = {
-                shadow = { enabled = false },
-                blur   = { enabled = false, xray = true },
-                rounding = 0,
-                active_opacity = 1, inactive_opacity = 1, fullscreen_opacity = 1,
-            },
-        })
-        -- Force every window opaque (beats the per-app opacity rules).
-        hl.window_rule({ name = "gamemode-opaque", match = { class = "(.*)" }, opacity = "1.0 1.0 1.0" })
-        -- Flatten the shell layers too: no blur, no animations on rofi/waybar/notifs.
-        hl.layer_rule({
-            name   = "gamemode",
-            blur   = false,
-            no_anim = true,
-            match  = { namespace = "^(rofi|notifications|swaync-(notification-window|control-center)|logout_dialog|waybar|.*www-daemon)$" },
-        })
+        workflows.apply("gaming")
         os.execute(home .. "/.config/waybar/scripts/waybar-theme min >/dev/null 2>&1 &")
         os.execute("notify-send -a 'Game Mode' -i 'dialog-information' -u low 'Game Mode' 'Performance Mode On (flat corners, no blur/anims)' &")
     end
@@ -232,7 +269,7 @@ end
 
 -- Toggle Zsh Theme Mode (cycles dynamically using Lua script)
 function M.toggle_zsh_theme()
-    local home = os.getenv("HOME") or "/home/newpr"
+    local home = os.getenv("HOME") or os.getenv("USERPROFILE") or "/root"
     os.execute("lua " .. home .. "/.config/hypr/hyprland/luascript/zsh-theme.lua cycle &>/dev/null &")
 end
 
@@ -240,7 +277,7 @@ end
 -- NOTE: The trailing & backgrounds the process so os.execute() returns
 -- immediately without blocking the Hyprland compositor.
 function M.toggle_rofi_theme()
-    local home = os.getenv("HOME") or "/home/newpr"
+    local home = os.getenv("HOME") or os.getenv("USERPROFILE") or "/root"
     os.execute("lua " .. home .. "/.config/hypr/hyprland/luascript/rofi-theme.lua cycle &>/dev/null &")
 end
 

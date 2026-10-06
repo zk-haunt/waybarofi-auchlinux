@@ -1,3 +1,11 @@
+/* The six colour names in this file were undefined. It pulls in
+   ~/.config/rofi/theme.rasi, which declares only the main- and select-
+   families, so every @background-colour, @foreground-colour,
+   @border-colour, @alternate-background and @selected-normal- reference
+   resolved to nothing and the theme rendered broken. They are remapped
+   onto the names theme.rasi actually provides.
+   (Careful editing this: a literal star-slash inside a comment ends it
+   early, which is exactly how this header broke the parse once.) */
 /**
  * Cyberpunk Glassmorphism Theme (lol)
  * Translucent, glowing cyan/purple borders, side mode-switcher
@@ -31,9 +39,9 @@ window {
     padding:                     0px;
     border:                      2px solid;
     border-radius:               12px;
-    border-color:                @border-colour;
+    border-color:                @main-br;
     cursor:                      "default";
-    background-color:            @background-colour;
+    background-color:            @main-bg;
 }
 
 mainbox {
@@ -61,8 +69,8 @@ inputbar {
     border:                      1px solid;
     border-radius:               8px;
     border-color:                rgba(255, 255, 255, 0.1);
-    background-color:            @alternate-background;
-    text-color:                  @foreground-colour;
+    background-color:            @main-ex;
+    text-color:                  @main-fg;
     children:                    [ "textbox-prompt-colon", "entry" ];
 }
 
@@ -101,7 +109,7 @@ listview {
     padding:                     5px;
     border:                      0px;
     background-color:            transparent;
-    text-color:                  @foreground-colour;
+    text-color:                  @main-fg;
     cursor:                      "default";
 }
 
@@ -113,18 +121,18 @@ element {
     border:                      0px;
     border-radius:               8px;
     background-color:            transparent;
-    text-color:                  @foreground-colour;
+    text-color:                  @main-fg;
     cursor:                      pointer;
 }
 
 element normal.normal {
     background-color:            transparent;
-    text-color:                  @foreground-colour;
+    text-color:                  @main-fg;
 }
 
 element selected.normal {
-    background-color:            @selected-normal-background;
-    text-color:                  @selected-normal-foreground;
+    background-color:            @select-bg;
+    text-color:                  @select-fg;
 }
 
 element-icon {
@@ -155,15 +163,15 @@ button {
     border:                      1px solid;
     border-radius:               8px;
     border-color:                rgba(255, 255, 255, 0.05);
-    background-color:            @alternate-background;
-    text-color:                  @foreground-colour;
+    background-color:            @main-ex;
+    text-color:                  @main-fg;
     cursor:                      pointer;
     vertical-align:              0.5;
     horizontal-align:            0.5;
 }
 
 button selected {
-    border-color:                @border-colour;
-    background-color:            @selected-normal-background;
-    text-color:                  @selected-normal-foreground;
+    border-color:                @main-br;
+    background-color:            @select-bg;
+    text-color:                  @select-fg;
 }

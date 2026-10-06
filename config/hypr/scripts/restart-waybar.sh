@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
 # Check if waybar is managed by systemd
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
 USE_SYSTEMD=false
 if systemctl --user list-units --all -t service | grep -q "waybar.service"; then
     USE_SYSTEMD=true

@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# Menu labels live in variables used BOTH in the options string and the case
+# patterns below, so the literal exists once. The cursor entry carries a U+FE0F
+# variation selector, which is exactly the kind of invisible byte that silently
+# breaks full-string dispatch when a label is edited.
+
+# -u and pipefail, but NOT -e. `set -e` changes control flow in ways that
+# break the `cmd || fallback` idiom these scripts use throughout, and
+# they are bound to keys, so a wrong exit turns a cosmetic bug into a
+# dead keybind. -u catches typo'd variable names; every top-level
+# positional read was audited and guarded with ${N:-} first.
+set -uo pipefail
+
+LBL_GTK=$'\U0001F3AD  GTK Theme'
+LBL_ICON=$'\U0001F3A8  Icon Theme'
+LBL_CURSOR=$'\U0001F5B1\UFE0F  Cursor Theme'
+
 # Auchlinux Unified Theme Switcher (GTK, Icons, Cursors) using Rofi
 theme="$HOME/.config/rofi/powermenu/style.rasi"
 
@@ -16,7 +32,7 @@ get_current() {
 }
 
 main_menu() {
-    options="🎭  GTK Theme\n🎨  Icon Theme\n🖱️  Cursor Theme"
+    options="${LBL_GTK}\n${LBL_ICON}\n${LBL_CURSOR}"
     echo -e "$options" | rofi -dmenu -i -no-custom -p "Theme Switcher" -theme "$theme" -theme-str "listview { lines: 3; }"
 }
 
@@ -95,26 +111,30 @@ select_cursor() {
     fi
 }
 
-if [ "$1" == "cursor" ]; then
+if [ "${1:-}" == "cursor" ]; then
     select_cursor
     exit 0
-elif [ "$1" == "gtk" ]; then
+elif [ "${1:-}" == "gtk" ]; then
     select_gtk
     exit 0
-elif [ "$1" == "icon" ]; then
+elif [ "${1:-}" == "icon" ]; then
     select_icon
     exit 0
 fi
 
 choice=$(main_menu)
 case "$choice" in
-    "🎭  GTK Theme")
+    "${LBL_GTK}")
         select_gtk
         ;;
-    "🎨  Icon Theme")
+    "${LBL_ICON}")
         select_icon
         ;;
-    "🖱️  Cursor Theme")
+    "${LBL_CURSOR}")
         select_cursor
+        ;;
+    *)
+        notify-send -u critical "Theme Picker" "Unrecognised menu choice: $choice"
+        exit 1
         ;;
 esac

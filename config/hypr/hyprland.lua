@@ -5,7 +5,6 @@ require("hyprland/env_var")
 require("hyprland/luascript/luafunctions")
 require("hyprland/programnkeys")
 require("hyprland/anim")
-require("hyprland/plugins")
 
 -----------------------
 ----- PERMISSIONS -----

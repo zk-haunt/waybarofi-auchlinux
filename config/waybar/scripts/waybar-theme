@@ -80,6 +80,9 @@ else
             target_theme="${all_themes[$arr_idx]}"
         fi
     else
+        if [[ "$query" == "privacy waybar" || "$query" == "privacy_waybar" || "$query" == "privacy-waybar" ]]; then
+            query="privacy"
+        fi
         for theme in "${all_themes[@]}"; do
             if [[ "$theme" == "$query" ]]; then
                 target_theme="$theme"

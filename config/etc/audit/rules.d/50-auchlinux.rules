@@ -1,0 +1,37 @@
+## Small audit ruleset — installed to /etc/audit/rules.d/ by
+## scripts/harden-system.sh and loaded with `augenrules --load`.
+##
+## auditd was running with NO rules (Lynis ACCT-9630), so it recorded nothing.
+## These watch the few places an attacker changes to gain or keep root, plus
+## kernel module loading. Deliberately small: every rule here is something you
+## would actually want to look at, not compliance noise.
+##
+## Read the log:   sudo ausearch -i -k <key>      (keys below)
+##                 sudo aureport --key --summary
+
+# Start clean, room for bursts, log (not panic) on failure, and keep loading
+# the remaining rules if one fails.
+-D
+-b 8192
+-f 1
+-c
+
+# Accounts and groups — who exists, who can become root.
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+
+# Persistence spots: a preloaded library runs inside every program, a system
+# unit or pacman hook runs as root. (pacman updates its own packaged hooks under
+# /usr, which is why only the local /etc hook dir is watched.)
+-w /etc/ld.so.preload -p wa -k preload
+-w /etc/systemd/system/ -p wa -k systemd-units
+-w /etc/pacman.d/hooks/ -p wa -k pacman-hooks
+
+# Kernel modules loaded or removed, by anyone. Boot and new hardware produce
+# expected entries; an unexpected one mid-session is worth a look.
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
+-a always,exit -F arch=b32 -S init_module,finit_module,delete_module -k modules

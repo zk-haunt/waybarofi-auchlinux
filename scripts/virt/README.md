@@ -6,9 +6,9 @@ creating VMs from any ISO.
 ## Quick start
 
 ```bash
-./scripts/virtualization/virt-manager.sh          # 1. one-time platform setup, then re-login
-./scripts/virtualization/kvm.sh iso               # 2. fetch + verify the Arch ISO
-./scripts/virtualization/kvm.sh create            # 3. boot it
+./scripts/virt/virt-manager.sh          # 1. one-time platform setup, then re-login
+./scripts/virt/kvm.sh iso               # 2. fetch + verify the Arch ISO
+./scripts/virt/kvm.sh create            # 3. boot it
 ```
 
 ---
@@ -20,7 +20,7 @@ starts the default NAT network, and grants libvirt access to ISOs in `$HOME`.
 Nothing else in this guide works until this is done.
 
 ```bash
-./scripts/virtualization/virt-manager.sh
+./scripts/virt/virt-manager.sh
 ```
 
 Needs sudo, so run it directly in your terminal where it can prompt you for a
@@ -40,7 +40,7 @@ virsh --connect qemu:///system net-list       # "default" network, active
 ### From the Arch ISO (default) — verification is automatic
 
 ```bash
-./scripts/virtualization/kvm.sh iso        # ~1.5GB download to ~/Downloads
+./scripts/virt/kvm.sh iso        # ~1.5GB download to ~/Downloads
 ```
 
 **Nothing to verify by hand here.** `kvm.sh iso` fetches Arch's official
@@ -62,7 +62,7 @@ pacman-key -v archlinux-x86_64.iso.sig      # want: "Good signature from ..."
 Then boot it:
 
 ```bash
-./scripts/virtualization/kvm.sh create     # boots VM "archtest", opens virt-viewer
+./scripts/virt/kvm.sh create     # boots VM "archtest", opens virt-viewer
 ```
 
 Defaults: 4G RAM, 4 vCPUs, 40G disk, UEFI + TPM, NAT networking. Override any
@@ -77,8 +77,8 @@ Every `create` accepts optional spec flags. Leave one out and it keeps its
 default. They work with or without an ISO path, in any order:
 
 ```bash
-./scripts/virtualization/kvm.sh create --ram 8G --cpus 6 --disk 80
-./scripts/virtualization/kvm.sh create ~/Downloads/other.iso myvm --ram 2G
+./scripts/virt/kvm.sh create --ram 8G --cpus 6 --disk 80
+./scripts/virt/kvm.sh create ~/Downloads/other.iso myvm --ram 2G
 ```
 
 | Flag | Meaning | Default |
@@ -125,8 +125,8 @@ without one the name comes from the ISO filename
 (`bazzite-stable-live-amd64.iso` → VM `bazzite-stable-live-amd64`):
 
 ```bash
-./scripts/virtualization/kvm.sh create ~/Downloads/bazzite-stable-live-amd64.iso
-./scripts/virtualization/kvm.sh create ~/Downloads/bazzite-stable-live-amd64.iso my-bazzite
+./scripts/virt/kvm.sh create ~/Downloads/bazzite-stable-live-amd64.iso
+./scripts/virt/kvm.sh create ~/Downloads/bazzite-stable-live-amd64.iso my-bazzite
 ```
 
 The SHA-256 it prints on the way up is the same value as step 2 — a last
@@ -151,13 +151,12 @@ Start a stopped VM, then delete one permanently:
 
 ```bash
 virsh --connect qemu:///system start <name>
-./scripts/virtualization/kvm.sh destroy                  # deletes "archtest"
-./scripts/virtualization/kvm.sh destroy <name>           # deletes a named VM
+./scripts/virt/kvm.sh destroy                  # deletes "archtest"
+./scripts/virt/kvm.sh destroy <name>           # deletes a named VM
 ```
 
 > **`destroy` does not ask for confirmation** and removes the disk image with
-> the VM. Check the name against `virsh list --all` first. (A typed-`yes`
-> guard is tracked in `todo.md`.)
+> the VM. Check the name against `virsh list --all` first.
 
 `virt-manager` gives you the same operations in a GUI, and lists every VM in
 its sidebar.
@@ -171,8 +170,8 @@ Download the Win11 ISO yourself first ("Download Windows 11 Disk Image" from
 https://www.microsoft.com/software-download/windows11), then:
 
 ```bash
-./scripts/virtualization/win11.sh drivers                      # virtio-win ISO, ~700MB, cached
-./scripts/virtualization/win11.sh create ~/Downloads/win11.iso
+./scripts/virt/win11.sh drivers                      # virtio-win ISO, ~700MB, cached
+./scripts/virt/win11.sh create ~/Downloads/win11.iso
 ```
 
 Specs: 8G RAM, 6 vCPUs, 64G virtio disk, UEFI + TPM 2.0 (both required by
@@ -190,7 +189,8 @@ During Windows setup:
 4. Run Windows Update once, then it's ready.
 
 ```bash
-./scripts/virtualization/win11.sh destroy    # deletes the VM and its 64G disk, no prompt
+./scripts/virt/win11.sh destroy    # deletes the VM and its 64G disk (asks first)
+./scripts/virt/win11.sh destroy --yes   # skip the confirmation
 ```
 
 Same warning as above, and it matters more here: this disk isn't throwaway.
@@ -203,9 +203,9 @@ Same warning as above, and it matters more here: this disk isn't throwaway.
 
 | Script | Purpose |
 |---|---|
-| `scripts/virtualization/virt-manager.sh` | The platform — packages, groups, NAT network, ACLs. Run once. |
-| `scripts/virtualization/kvm.sh` | Create/destroy VMs from any ISO. Defaults to a disposable Arch VM. |
-| `scripts/virtualization/win11.sh` | A Windows 11 guest with virtio drivers and TPM. |
+| `scripts/virt/virt-manager.sh` | The platform — packages, groups, NAT network, ACLs. Run once. |
+| `scripts/virt/kvm.sh` | Create/destroy VMs from any ISO. Defaults to a disposable Arch VM. |
+| `scripts/virt/win11.sh` | A Windows 11 guest with virtio drivers and TPM. |
 
 `kvm.sh setup` delegates to `virt-manager.sh` rather than duplicating it, so
 there's one source of truth for the platform install.
@@ -245,7 +245,7 @@ running a web or game server other machines connect to, sharing files over
 SMB, or SSHing into the VM from a different computer.
 
 ```bash
-./scripts/virtualization/virt-manager.sh --bridge <iface>    # e.g. enp3s0
+./scripts/virt/virt-manager.sh --bridge <iface>    # e.g. enp3s0
 ```
 
 `<iface>` is the network interface carrying your connection — find it with
@@ -282,7 +282,7 @@ Step 8 of `virt-manager.sh` fixes this automatically with an execute-only
 
 ## 🖥️ Virt-Manager / QEMU / KVM
 
-One-shot setup script: [`scripts/virtualization/virt-manager.sh`](file:///home/newpr/auchlinux/scripts/virtualization/virt-manager.sh). Standalone (like `steam.sh`), uses the repo's info/ok/warn helper style, `set -euo pipefail`, refuses to run as root, calls sudo itself.
+One-shot setup script: [`scripts/virt/virt-manager.sh`](scripts/virt/virt-manager.sh). Standalone (like `steam.sh`), uses the repo's info/ok/warn helper style, `set -euo pipefail`, refuses to run as root, calls sudo itself.
 
 **What it does (default run — safe NAT):**
 1. **Pre-flight** — checks `/proc/cpuinfo` for `vmx`/`svm` (host confirmed **AMD-V / svm**, `/dev/kvm` live, kvm modules loaded); warns if BIOS virt is off but continues.
@@ -295,6 +295,6 @@ One-shot setup script: [`scripts/virtualization/virt-manager.sh`](file:///home/n
 
 **Optional `--bridge <iface>`** — builds a NetworkManager `br0` bridge enslaving the given wired interface and defines a libvirt network `host-bridge` (forward mode=bridge) for near-native LAN access. Heavily warned: **wired only** (no Wi-Fi), and briefly drops connectivity while the uplink moves onto the bridge. Skipped gracefully if nmcli/interface missing.
 
-**Usage:** `./scripts/virtualization/virt-manager.sh` (then log out/in, launch `virt-manager`). For Win11 guests: pick OVMF UEFI firmware + add an emulated swtpm TPM 2.0 device.
+**Usage:** `./scripts/virt/virt-manager.sh` (then log out/in, launch `virt-manager`). For Win11 guests: pick OVMF UEFI firmware + add an emulated swtpm TPM 2.0 device.
 
 **Not yet run end-to-end**: no sudo in this session, so the stack isn't installed here — script syntax (`bash -n`), `--help`, and arg-guards all verified; host is confirmed KVM-capable.

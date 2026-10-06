@@ -66,7 +66,20 @@ fi
 
 # 1. Update pacman databases
 info "Updating Arch package databases..."
-sudo pacman -Sy
+# -Syu, NOT -Sy. A bare -Sy refreshes the package databases without upgrading,
+# so the subsequent `pacman -S` installs packages built against libraries newer
+# than the ones on disk — the classic Arch partial-upgrade breakage, which on a
+# host left idle for a few weeks can produce an unbootable system.
+#
+# informant (installed in step 3) adds a pacman hook that aborts every upgrade
+# while Arch news is unread. Under `set -e` that would end this script with only
+# pacman's terse hook error, so on a re-run check first and say why.
+if command -v informant &>/dev/null && ! sudo informant check >/dev/null 2>&1; then
+    error "informant check failed — most likely unread Arch news, which blocks upgrades.
+    Read it with: sudo informant read   (sudo informant check shows the reason)
+    then re-run this script."
+fi
+sudo pacman -Syu --noconfirm
 
 # 2. Check/Install AUR helper (paru preferred)
 AUR_HELPER=""
@@ -263,6 +276,33 @@ OFFICIAL_PKGS=(
 
     # VPN (WireGuard profiles imported into NetworkManager via nmcli)
     wireguard-tools
+
+    # ProtonVPN, from `extra` rather than the Flathub build. Proton's own docs
+    # call the Flatpak third-party-maintained with "support may be limited" and
+    # the same limitations as their Snap: no Proton Protocols (Smart Protocol,
+    # Stealth), no split tunnelling. The native package is the same version
+    # (4.18.2) with none of that, and this repo's own rule in plansecurity.md P3
+    # is "native is fine for official-repo open-source".
+    proton-vpn-gtk-app
+    # proton-vpn-cli
+
+    # Security tooling, applied by step 9.
+    audit           # auditd — kernel audit log (plansecurity.md P4)
+    fwupd           # firmware updates; step 9 enables the metadata refresh timer
+    lynis           # security auditor; `sudo lynis audit system` for a baseline
+    informant       # Arch news gate: a pacman hook that stops -Syu until unread
+                    # news is read with `sudo informant read`. Do NOT join the
+                    # `informant` group — see step 9.
+
+    # Firewall. ufw's own before.rules/before6.rules already cover loopback
+    # anti-spoofing, established/related, the ICMPv4 set, the full ICMPv6
+    # neighbour/router-discovery set and the DHCP client — which is why the
+    # hand-written nftables ruleset this replaced was largely redundant.
+    # Enabling it is a manual step; see plansecurity.md P1.
+    ufw
+
+    # Compressed swap in RAM, set up by step 11 (scripts/zram.sh).
+    zram-generator
     
     # Zsh configuration plugins
     zsh-autosuggestions
@@ -282,6 +322,10 @@ OFFICIAL_PKGS=(
     guvcview               # GUI webcam viewer / control panel
     obs-studio             # advanced capture/streaming + virtual camera
     scrcpy                 # phone mirroring + USB camera source (--v4l2-sink)
+    android-udev    # udev rules so adb can claim a plugged-in phone. Without
+                    # these the device shows as "no permissions" or does not
+                    # appear in `adb devices` at all, which looks like a broken
+                    # cable rather than a missing package.
     android-tools          # adb: USB/Wi-Fi device bridge for scrcpy & port-forward
 )
 
@@ -293,7 +337,6 @@ AUR_PKGS=(
     grimblast-git
     droidcam                # phone-as-webcam client (Wi-Fi/USB)
     sndcpy                  # forward Android audio over USB (older phones; scrcpy 2.0+ does it natively)
-    localsend-bin           # cross-platform Wi-Fi file sharing (prebuilt; avoids long Flutter build)
 )
 
 # Install official packages
@@ -308,13 +351,138 @@ else
     "$AUR_HELPER" -S --needed --noconfirm "${AUR_PKGS[@]}"
 fi
 
-# 5. Flatpak configuration and Brave Browser
-info "Configuring Flatpak and installing Brave Browser..."
-# Add Flathub repository if it doesn't exist
+# 5. Flatpak configuration and apps
+#
+# Everything here is --user on purpose. System and user flatpaks are separate
+# ostree repos, so each scope keeps its OWN copy of the shared runtimes
+# (freedesktop Platform + Mesa + codecs ≈ 1.6G). Mixing scopes silently pays
+# that twice: this machine ended up with Zen installed --system by hand while
+# the repo installed Brave --user, so both stacks exist side by side.
+# One scope also means no root for updates, and a single set of Flatseal
+# permissions to trim (plansecurity.md P3).
+#
+# Only list APPS. The runtimes (org.freedesktop.Platform, .GL.default,
+# .codecs-extra) are pulled in automatically from each app's manifest — naming
+# them here would pin versions flatpak should be choosing itself.
+FLATPAK_APPS=(
+    # Brave — the designated primary browser (plansecurity.md P7: one primary
+    # browser, Shields replaces uBlock, aiming for zero extensions). Flatpak
+    # because it is a closed-source-ish Chromium rebuild and a high-exposure app,
+    # which is exactly the category P3 says to sandbox.
+    com.brave.Browser
+
+    # Zen — secondary browser. Same high-exposure reasoning as Brave. Was
+    # installed --system by hand, which duplicated the whole runtime stack
+    # (~1.6G); migrated to --user on 2026-10-02 so there is one scope to update
+    # and one set of Flatseal permissions to trim.
+    app.zen_browser.zen
+
+    # Parsec — remote desktop / game streaming. Closed-source binary, so
+    # sandboxing it is the point. Was installed by hand and missing from this
+    # script entirely until 2026-10-02.
+    com.parsecgaming.parsec
+
+    # LocalSend — Wi-Fi file sharing. Flatpak rather than the AUR localsend-bin:
+    # it is AUR-only natively, and plansecurity.md P3 says to Flatpak the AUR
+    # apps. Also removes the only reason this script needed an AUR helper for a
+    # desktop app. Needs port 53317 TCP+UDP opened — see P1.
+    org.localsend.localsend_app
+
+    # ProtonVPN — DELIBERATELY NOT USED. Kept here so the decision is visible
+    # rather than re-made from scratch later. Use the native `proton-vpn-gtk-app`
+    # + `proton-vpn-cli` from `extra` in OFFICIAL_PKGS above instead.
+    #
+    #   com.protonvpn.www
+    #
+    # Why native wins here, against the usual P3 "sandbox the high-exposure app"
+    # instinct:
+    #   1. Proton's own docs (protonvpn.com/support/linux-vpn-setup#limitations)
+    #      call the Flathub build third-party-maintained — "support may be
+    #      limited" — with "similar limitations as the Snap package".
+    #   2. Those documented limitations are: no Proton Protocols (Smart Protocol
+    #      AND Stealth), and no split tunnelling. Stealth is the one that matters
+    #      on a network that blocks VPNs, which is the main reason to run one here.
+    #   3. Identical version either way (4.18.2 at time of writing), so the
+    #      sandbox costs features and buys nothing in freshness.
+    #   4. It is GPL-3.0 and now in `extra`, so plansecurity.md P3's own rule
+    #      applies: "native is fine for official-repo open-source".
+    #   5. Size: 667 KiB / 5 MB native vs 32 MB / 89 MB flatpak.
+    # Revisit only if it is dropped from `extra`, or if Proton starts shipping
+    # Flathub themselves with feature parity.
+)
+
+info "Configuring Flatpak and installing apps..."
+# Flathub, in the user scope. Note --system installs would fail with "remote not
+# found" unless the remote is added there too; we deliberately don't.
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Install Brave Browser via Flatpak
-flatpak install --user flathub com.brave.Browser -y
+# -y plus --noninteractive so a missing-runtime prompt can't stall an unattended
+# run. Installs are idempotent: an already-present app is a no-op.
+for _app in "${FLATPAK_APPS[@]}"; do
+    info "  flatpak: $_app"
+    flatpak install --user --noninteractive -y flathub "$_app"
+done
+
+# Per-app sandbox overrides.
+#
+# This is the opposite of the usual Flatseal chore: plansecurity.md P3 is about
+# TRIMMING permissions, and the apps above mostly ship sensible ones already.
+# So most entries here WIDEN access where the shipped sandbox is too tight to
+# use; Brave is the exception that gets trimmed. Each one states why — a
+# permission without a reason is one nobody dares remove later.
+#
+# Format: "<app-id> <flatpak-override-args...>"
+FLATPAK_OVERRIDES=(
+    # LocalSend ships filesystems=xdg-download, so received files can only land
+    # in ~/Downloads and anything sent from elsewhere has to go through a portal
+    # file-picker dialog. Adding ~/Documents makes it usable for the common case
+    # without handing over the whole home directory, which would undo the point
+    # of sandboxing it. Widen further only if you actually need it:
+    #   flatpak override --user --filesystem=home org.localsend.localsend_app
+    "org.localsend.localsend_app --filesystem=~/Documents"
+
+    # Brave is the one app here that ships MORE than it needs. Trimmed:
+    #   ~/.local/share/applications (create) — the real one. Lets the sandboxed
+    #       browser write .desktop launchers, and a launcher's Exec= line runs
+    #       OUTSIDE the sandbox when clicked: a sandbox escape. Only used by
+    #       "Install app" (PWAs); that stops adding launchers.
+    #   ~/.local/share/icons (create) — the icons for those launchers.
+    #   host-etc — read access to all of /etc. Only consulted for managed
+    #       browser policies (/etc/brave/policies), which this setup has none of.
+    #   /tmp — the host's shared /tmp; the sandbox gets a private one anyway.
+    #   xdg-desktop — ~/Desktop, unused on Hyprland.
+    # Kept: xdg-download, pipewire (audio/WebRTC), dconf/kioslaverc (theme and
+    # proxy settings). Undo one with e.g.:
+    #   flatpak override --user --filesystem=~/.local/share/applications:create com.brave.Browser
+    # or all of them: flatpak override --user --reset com.brave.Browser
+    "com.brave.Browser --nofilesystem=~/.local/share/applications --nofilesystem=~/.local/share/icons --nofilesystem=host-etc --nofilesystem=/tmp --nofilesystem=xdg-desktop"
+)
+
+if ((${#FLATPAK_OVERRIDES[@]})); then
+    info "Applying Flatpak sandbox overrides..."
+    for _ovr in "${FLATPAK_OVERRIDES[@]}"; do
+        # Word-split deliberately: each entry is "<app-id> <args...>".
+        # shellcheck disable=SC2086
+        set -- $_ovr
+        _id="$1"; shift
+        # A --filesystem=~/Dir grant does nothing if the directory is absent, and
+        # a fresh install has no XDG dirs yet, so create the ones we grant.
+        for _arg in "$@"; do
+            case "$_arg" in
+                --filesystem=~/*) mkdir -p "${HOME}/${_arg#--filesystem=~/}" ;;
+            esac
+        done
+        info "  override: $_id $*"
+        flatpak override --user "$@" "$_id"
+    done
+fi
+
+# If you previously installed any of these --system (check:
+#   flatpak list --system --app
+# ) the user copy above is an ADDITIONAL install, not a move. To reclaim the
+# duplicated runtimes afterwards:
+#   flatpak uninstall --system <app-id>
+#   flatpak uninstall --system --unused
 
 # 6. Apply dotfiles configurations using apply-config.sh
 if [[ -f "./scripts/apply-config.sh" ]]; then
@@ -346,7 +514,14 @@ if pacman -Qq v4l2loopback-dkms &>/dev/null; then
         || warn "v4l2loopback will load on next reboot (module just built by dkms)."
 fi
 
-# 9. Bluetooth — don't power the radio on by itself. bluetoothd still runs
+# 9. System hardening — scripts/harden-system.sh: ufw, sysctl, coredumps off,
+#     removable-media options, unused kernel modules blocked, auditd + rules,
+#     time sync, /boot root-only, fwupd metadata timer, informant group check.
+#     Kept as a separate script so it can be re-run on its own after editing
+#     anything under config/etc/; the reasons for each piece live there.
+./scripts/harden-system.sh || warn "System hardening reported an error — re-run ./scripts/harden-system.sh to see it."
+
+# 10. Bluetooth — don't power the radio on by itself. bluetoothd still runs
 #     (so the blueman tray icon works without root), but the radio stays off
 #     until it's toggled manually from the tray.
 #
@@ -365,11 +540,17 @@ sudo systemctl enable bluetooth.service
 sudo sed -i -E 's/^#?AutoEnable=.*/AutoEnable=false/' /etc/bluetooth/main.conf
 sudo rfkill block bluetooth
 
+# 11. Swap: zram — compressed swap in RAM, no disk writes. Without any swap,
+#     idle memory can never leave RAM and the OOM killer fires on ordinary
+#     peaks; scripts/zram.sh has the measured reasons and also turns zswap off.
+info "Setting up zram swap..."
+./scripts/zram.sh || warn "zram setup failed — run ./scripts/zram.sh by hand."
+
 info "Bootstrap complete! Reboot now to load into Hyprland."
 cat <<'EOT'
   Optional setups are separate scripts — run them when you want them:
     ./scripts/steam/steam.sh                  Steam + Vulkan GPU drivers
-    ./scripts/virtualization/virt-manager.sh  QEMU/KVM + virt-manager
+    ./scripts/virt/virt-manager.sh            QEMU/KVM + virt-manager
     ./scripts/easyeffects/easyeffects.sh      EasyEffects audio EQ + presets
     ./scripts/vtube/vtube.sh setup                  VTube face-tracking pipeline
 

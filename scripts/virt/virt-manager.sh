@@ -7,8 +7,8 @@
 #  get internet out of the box.
 #
 #  Usage:
-#     ./scripts/virtualization/virt-manager.sh                 # NAT setup (safe, recommended)
-#     ./scripts/virtualization/virt-manager.sh --bridge <if>   # also build a host bridge (br0)
+#     ./scripts/virt/virt-manager.sh                 # NAT setup (safe, recommended)
+#     ./scripts/virt/virt-manager.sh --bridge <if>   # also build a host bridge (br0)
 #                                                # over <if> for near-native LAN
 #                                                # access (wired only, see notes)
 #
@@ -168,4 +168,4 @@ echo
 echo "  Windows 11 guests: choose firmware 'UEFI x86_64 (…OVMF…)' and add a TPM"
 echo "  device (Emulated, TPM 2.0, swtpm) in the VM's hardware settings."
 echo
-[[ -z "$BRIDGE_IF" ]] && info "For a LAN-visible VM later (wired only): ./scripts/virtualization/virt-manager.sh --bridge <iface>"
+[[ -z "$BRIDGE_IF" ]] && info "For a LAN-visible VM later (wired only): ./scripts/virt/virt-manager.sh --bridge <iface>"
