@@ -1,0 +1,88 @@
+/**
+ * ROFI Layout — dropdown under a Waybar button
+ *
+ * Used by ~/.config/hypr/scripts/sec-picker.sh, which adds the position (and
+ * the same width) with -theme-str so the list opens right under the clicked
+ * button. Rows are Pango markup: a coloured status icon, the name, a summary.
+ * A search field on top filters them by name, from the start of words (the
+ * scripts pass the markup as each row's "display"); ↑↓ move, Enter or a click
+ * opens. No hover-select: the row under the mouse took the selection, so
+ * typing "n" + Enter opened whatever the pointer sat on (2026-10-11).
+ * Colours match the other menus (clipboard/, logviewer/): crust background,
+ * mauve border; the hovered row gets a surface tint rather than the lavender
+ * fill, so the coloured icons stay readable on it.
+ */
+
+configuration {
+    show-icons:                  false;
+}
+
+* {
+    font:               "JetBrainsMono Nerd Font Propo 10";
+    main-bg:            #11111bf0;
+    main-fg:            #cdd6f4ff;
+    main-br:            #cba6f7ff;
+    hover-bg:           #45475aff;
+    input-bg:           #1e1e2eff;
+    muted-fg:           #7f849cff;
+    background-color:   transparent;
+    text-color:         @main-fg;
+}
+
+window {
+    width:                       520px;
+    transparency:                "real";
+    border:                      2px;
+    border-color:                @main-br;
+    border-radius:               12px;
+    background-color:            @main-bg;
+    padding:                     6px;
+}
+
+mainbox {
+    children:                    [ "inputbar", "listview" ];
+    spacing:                     6px;
+}
+
+inputbar {
+    children:                    [ "textbox-search", "entry" ];
+    spacing:                     8px;
+    padding:                     7px 10px;
+    border-radius:               8px;
+    background-color:            @input-bg;
+}
+textbox-search {
+    expand:                      false;
+    str:                         "󰍉";
+    text-color:                  @muted-fg;
+    vertical-align:              0.5;
+}
+entry {
+    placeholder:                 "Type to filter · ↑↓ · Enter";
+    placeholder-color:           @muted-fg;
+    cursor:                      text;
+    vertical-align:              0.5;
+}
+
+listview {
+    lines:                       5;
+    dynamic:                     true;
+    fixed-height:                false;
+    scrollbar:                   false;
+    cycle:                       true;
+    spacing:                     2px;
+}
+
+element {
+    padding:                     8px 10px;
+    border-radius:               8px;
+    cursor:                      pointer;
+}
+element selected.normal {
+    background-color:            @hover-bg;
+}
+element-text {
+    vertical-align:              0.5;
+    cursor:                      inherit;
+    text-color:                  inherit;
+}

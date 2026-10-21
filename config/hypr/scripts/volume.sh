@@ -116,12 +116,14 @@ case "${1:-}" in
     ;;
   mic-mute)
     wpctl set-mute "$source" toggle
-    muted="$(wpctl get-volume "$source" | grep -q MUTED && printf Muted || printf Unmuted)"
-    has notify-send || exit 0
-    local mic_icon="󰍬"
-    if [[ "$muted" == "Muted" ]]; then
-      mic_icon="󰍭"
+    # Was `local mic_icon=…` here: `local` outside a function is an error, and
+    # under `set -e` the script died on it — so this notification never showed.
+    if wpctl get-volume "$source" | grep -q MUTED; then
+      muted="Muted";   mic_icon="󰍭"
+    else
+      muted="Unmuted"; mic_icon="󰍬"
     fi
+    has notify-send || exit 0
     notify-send \
       -a "Microphone" \
       -r "$mic_notify_id" \

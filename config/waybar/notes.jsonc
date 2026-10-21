@@ -1,0 +1,16 @@
+// Notes module — kept in its own file and pulled into a theme via "include",
+// like weather.jsonc. Count of sticky notes; hover lists the newest. Status
+// and menu come from ~/.config/hypr/scripts/notes-menu.sh.
+// Refresh now:  pkill -RTMIN+12 waybar   (notes-menu.sh does it after each change)
+{
+    "custom/notes": {
+        "exec": "$HOME/.config/hypr/scripts/notes-menu.sh --status",
+        "return-type": "json",
+        "interval": 300,
+        "signal": 12,
+        "tooltip": true,
+        "format": " <span color='#666666'></span> {}",
+        "on-click": "$HOME/.config/hypr/scripts/notes-menu.sh",
+        "on-click-right": "$HOME/.config/hypr/scripts/notes-menu.sh new"
+    }
+}

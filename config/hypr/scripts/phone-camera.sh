@@ -30,6 +30,32 @@ LABEL="Phone Camera"
 have(){ command -v "$1" &>/dev/null; }
 notify(){ notify-send -a "Phone Camera" "$@"; }
 
+# PIDs of the ffmpeg / scrcpy processes feeding $LOOPDEV.
+stream_pids() {
+    { pgrep -a -x ffmpeg; pgrep -a -x scrcpy; } 2>/dev/null | grep -F -- "$LOOPDEV" | cut -d' ' -f1
+}
+
+# Phone cameras are mounted sideways and scrcpy passes the sensor's picture
+# through unrotated, so an upright phone gave a landscape webcam (2026-10-11).
+# Rotate it the way Android's camera apps do: the sensor's mounting angle from
+# the phone, corrected for how the phone is turned right now (front cameras
+# count the other way). With auto-rotate off the phone always reads "upright".
+cam_rotation() {   # front|back -> 0/90/180/270, clockwise
+    local facing=$1 sensor rot deg
+    sensor=$(adb shell dumpsys media.camera 2>/dev/null | tr -d '\r' | awk -v f="$facing" '
+        /Facing:/ { cur = tolower($2) }  /Orientation:/ && cur == f { print $2; exit }')
+    [[ $sensor =~ ^(0|90|180|270)$ ]] || { [[ $facing == front ]] && sensor=270 || sensor=90; }
+    # Android 16: "mCurrentRotation=ROTATION_90" (already degrees); older
+    # versions: "SurfaceOrientation: 1" (quarter turns) in the input dump.
+    deg=$(adb shell dumpsys window displays 2>/dev/null | tr -d '\r' | grep -m1 -oE 'mCurrentRotation=ROTATION_[0-9]+' | grep -oE '[0-9]+$')
+    if [[ -z $deg ]]; then
+        rot=$(adb shell dumpsys input 2>/dev/null | tr -d '\r' | grep -m1 -oE 'SurfaceOrientation: [0-3]' | grep -oE '[0-3]$')
+        deg=$(( ${rot:-0} * 90 ))
+    fi
+    if [[ $facing == front ]]; then echo $(( (sensor + deg) % 360 ))
+    else echo $(( (sensor - deg + 360) % 360 )); fi
+}
+
 # Make sure a phone is reachable over USB via adb (debugging authorized).
 ensure_adb() {
     have adb || { notify -u critical "android-tools (adb) not installed — run install-packages.sh"; exit 1; }
@@ -74,9 +100,11 @@ case "${1:-}" in
         have scrcpy || { notify -u critical "scrcpy not installed — run install-packages.sh"; exit 1; }
         ensure_adb
         ensure_loopback
-        notify "USB camera ($facing) → $LOOPDEV"
+        rotate=$(cam_rotation "$facing")
+        notify "Phone camera ($facing, turned ${rotate}°) → $LOOPDEV"
         # scrcpy feeds the phone camera straight into the v4l2loopback sink (Android 12+).
-        exec scrcpy --video-source=camera --camera-facing="$facing" \
+        # "Webcam": hyprland.lua floats it, and the phone menu won't take it for the mirror.
+        exec scrcpy --video-source=camera --camera-facing="$facing" --capture-orientation="$rotate" --window-title=Webcam \
                     --camera-size=1280x720 --no-audio --v4l2-sink="$LOOPDEV"
         ;;
     usb-ipwebcam)
@@ -92,16 +120,16 @@ case "${1:-}" in
             -i "http://localhost:$port/video" -vf "format=yuv420p" -f v4l2 "$LOOPDEV"
         ;;
     stop)
-        pkill -f "ffmpeg.*$LOOPDEV" 2>/dev/null
-        pkill -f "scrcpy.*v4l2-sink=$LOOPDEV" 2>/dev/null
+        # By process name, then arguments — a bare `pkill -f` pattern also hits
+        # any shell or editor with this text in its command line.
+        stream_pids | xargs -r kill 2>/dev/null
         pkill -x droidcam-cli 2>/dev/null
         have adb && adb forward --remove-all >/dev/null 2>&1
         notify "Stopped"
         ;;
     status)
         if [ -e "$LOOPDEV" ]; then echo "virtual device: $LOOPDEV (ready)"; else echo "virtual device: NOT loaded"; fi
-        { pgrep -f "ffmpeg.*$LOOPDEV" >/dev/null || pgrep -f "scrcpy.*v4l2-sink=$LOOPDEV" >/dev/null; } \
-            && echo "streaming: yes" || echo "streaming: no"
+        [[ -n $(stream_pids) ]] && echo "streaming: yes" || echo "streaming: no"
         ;;
     *)
         echo "usage: phone-camera.sh start <ip[:port]> | usb [front|back] | usb-ipwebcam [port] | droidcam <ip> [port] | stop | status"

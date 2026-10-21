@@ -2,13 +2,18 @@
 # Android screen mirroring + control via scrcpy (USB or Wi-Fi), audio included.
 # scrcpy 2.0+ forwards audio natively on Android 11+; older phones can use sndcpy.
 #
-#   mirror.sh                 — mirror over USB (auto-detect device)
-#   mirror.sh wifi <ip[:port]>— mirror wirelessly (default port 5555; auto adb tcpip)
+#   mirror.sh                 — mirror the connected phone (ANDROID_SERIAL picks one)
+#   mirror.sh switch          — USB → Wi-Fi: scrcpy turns on adb's TCP mode on the
+#                               phone, reconnects over it and mirrors; unplug after
+#   mirror.sh wifi <ip[:port]>— mirror a phone already listening on Wi-Fi (port 5555
+#                               after a switch, or Android 11+ wireless debugging)
 #   mirror.sh audio           — forward phone audio only, no screen (sndcpy)
 #   mirror.sh stop            — close mirror + drop wireless adb connection
 #
 # Tips: enable "USB debugging" in Developer options. For Wi-Fi the phone must be
-# on the same network; the first wireless connect may need a one-time USB plug-in.
+# on the same network, and listening: either `switch` once over USB (lasts until
+# the phone restarts), or Android 11+ Wireless debugging, paired once — the
+# phone menu (phone-menu.sh) walks through both.
 set -uo pipefail
 
 have(){ command -v "$1" &>/dev/null; }
@@ -19,9 +24,16 @@ ensure_adb() {
     adb start-server >/dev/null 2>&1
 }
 
-# Common scrcpy flags: keep awake, turn the phone screen off while mirroring,
-# and stay on top so it behaves like a floating window.
-SCRCPY_OPTS=(--stay-awake --turn-screen-off --window-title="Phone")
+# Common scrcpy flags: keep the phone awake, and title the window — the phone
+# menu finds it by that, and hyprland.lua floats "Phone" at phone size while
+# "Phone · tiled" matches no rule and tiles. Which one comes from the phone
+# menu (its Tile/Float row, or how the window was when mirroring stopped).
+# The phone's own screen stays on — MIRROR_SCREEN_OFF=1 turns it off while
+# mirroring to save battery; Alt+Shift+O in the window turns it back on.
+title="Phone"
+[[ $(cat "${XDG_CACHE_HOME:-$HOME/.cache}/auch/phone/mirror-layout" 2>/dev/null) == tile ]] && title="Phone · tiled"
+SCRCPY_OPTS=(--stay-awake --window-title="$title")
+[[ ${MIRROR_SCREEN_OFF:-} == 1 ]] && SCRCPY_OPTS+=(--turn-screen-off)
 
 case "${1:-}" in
     ""|usb)
@@ -32,8 +44,14 @@ case "${1:-}" in
             unauthorized) notify -u critical "Unauthorized — accept the USB-debugging prompt on the phone."; exit 1 ;;
             *) notify -u critical "No phone over USB. Plug in + enable USB debugging."; exit 1 ;;
         esac
-        notify "Mirroring over USB"
+        notify "Mirroring the phone"
         exec scrcpy "${SCRCPY_OPTS[@]}"
+        ;;
+    switch)
+        have scrcpy || { notify -u critical "scrcpy not installed"; exit 1; }
+        ensure_adb
+        notify "Switching to Wi-Fi…"
+        exec scrcpy --select-usb --tcpip "${SCRCPY_OPTS[@]}"
         ;;
     wifi)
         ip="${2:-}"; [ -z "$ip" ] && { echo "usage: mirror.sh wifi <ip[:port]>"; exit 1; }
@@ -57,6 +75,6 @@ case "${1:-}" in
         notify "Stopped"
         ;;
     *)
-        echo "usage: mirror.sh [usb] | wifi <ip[:port]> | audio | stop"
+        echo "usage: mirror.sh [usb] | switch | wifi <ip[:port]> | audio | stop"
         ;;
 esac

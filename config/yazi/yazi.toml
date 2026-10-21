@@ -1,0 +1,26 @@
+# Yazi — overrides only; everything else is the 26.9.1 preset
+# (https://github.com/sxyazi/yazi/tree/v26.9.1/yazi-config/preset).
+
+[mgr]
+ratio          = [ 1, 3, 4 ]   # parent | current | a wider preview pane
+sort_by        = "natural"     # file2 before file10
+sort_dir_first = true
+linemode       = "size"
+show_hidden    = false         # `.` toggles
+scrolloff      = 5
+
+[preview]
+wrap          = "no"
+tab_size      = 4
+max_width     = 1200           # kitty draws real images; give them pixels
+max_height    = 1600
+image_quality = 85
+
+[opener]
+# $EDITOR is `code` in zsh, but Yazi started from the Hyprland bind (kitty -e
+# yazi) never ran zsh, so the fallback is nvim rather than the preset's vi —
+# which isn't installed here.
+edit = [
+	{ run = "${EDITOR:-nvim} %s", desc = "$EDITOR", for = "unix", block = true },
+	{ run = "nvim %s",            desc = "Neovim",  for = "unix", block = true },
+]

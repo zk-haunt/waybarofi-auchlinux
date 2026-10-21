@@ -1,0 +1,35 @@
+// "auch + security" bar — auchweather plus a security pill (one shield button
+// with a dropdown), a notes icon in the clock group, and a phone button sharing
+// a pill with the tray. Like auchweather, it edits nothing: it `include`s the
+// auch config and the module files, and only overrides modules-right and the
+// clock group's module list. The buttons open rofi dropdowns — see
+// ~/.config/hypr/scripts/{sec-picker,phone-menu,notes-menu}.sh.
+// Switch to it with:  waybar-theme auchsec
+{
+    "include": [
+        "~/.config/waybar/themes/config_auch.jsonc",
+        "~/.config/waybar/weather.jsonc",
+        "~/.config/waybar/security.jsonc",
+        "~/.config/waybar/notes.jsonc",
+        "~/.config/waybar/phone.jsonc"
+    ],
+    // auch's clock group with the notes icon next to notifications.
+    "group/clock-group": {
+        "orientation": "horizontal",
+        "modules": [
+            "custom/cava",
+            "idle_inhibitor",
+            "clock",
+            "custom/notification",
+            "custom/notes",
+            "custom/updates"
+        ]
+    },
+    "modules-right": [
+        "group/sec-pill",
+        "custom/weather",
+        "group/status-pill",
+        "group/tray-pill",
+        "group/power-pill"
+    ]
+}

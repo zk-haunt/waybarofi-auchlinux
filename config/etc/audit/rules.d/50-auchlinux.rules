@@ -10,7 +10,10 @@
 ##                 sudo aureport --key --summary
 
 # Start clean, room for bursts, log (not panic) on failure, and keep loading
-# the remaining rules if one fails.
+# the remaining rules if one fails. -c can't cover -b and -f: augenrules always
+# moves -D, -b and -f to the top, ahead of it. So if the kernel refuses -b,
+# nothing loads — seen 2026-10-09 with AppArmor listed after bpf in lsm=
+# (harden-system.sh now warns about that order; see manual.md §4).
 -D
 -b 8192
 -f 1

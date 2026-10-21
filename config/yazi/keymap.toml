@@ -1,0 +1,11 @@
+# Yazi keys — additions in front of the 26.9.1 preset, which keeps all of its
+# own (`~` or F1 lists them). `g h` home, `g c` ~/.config and `g d` Downloads
+# are already there.
+
+[mgr]
+prepend_keymap = [
+	{ on = [ "g", "a" ], run = "cd ~/auchlinux",            desc = "Go to ~/auchlinux" },
+	{ on = [ "g", "p" ], run = "cd ~/Pictures",             desc = "Go to ~/Pictures" },
+	{ on = [ "g", "s" ], run = "cd ~/Pictures/Screenshots", desc = "Go to screenshots" },
+	{ on = [ "g", "w" ], run = "cd ~/Pictures/wallpapers",  desc = "Go to wallpapers" },
+]

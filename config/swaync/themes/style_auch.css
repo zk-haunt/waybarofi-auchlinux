@@ -1,95 +1,457 @@
+/* auch: near-black panel and cards with a #a6bbda underline, #89b4fa for
+   anything switched on. Fixed palette (it does not follow the wallpaper;
+   "matugen" does).
+
+   Class names are swaync 0.12's (GTK 4): .image / .summary / .body / .time and
+   .widget-buttons-grid flowboxchild > button. This theme used to target
+   .notification-default-image, which matches nothing any more.
+
+   swaync loads its own stylesheet at the same priority as this one, so its long
+   selectors win on specificity over short ones; the card rules below spell out
+   the same path. */
+
+/* Generated on every panel open by hypr/scripts/swaync-buttons.sh: points the
+   battery tile at its freshly rendered picture. */
+@import "battery.css";
+
 * {
   font-family: 'JetBrainsMono Nerd Font', sans-serif;
 }
 
-.notification-row {
-  outline: none;
+/* Size on the two roots, not on `*`: a size on every node also lands on the
+   label inside each button, so a button's own font-size would never apply. */
+.control-center,
+.floating-notifications {
+  font-size: 12px;
 }
 
-.notification-row:focus,
-.notification-row:hover {
+notificationwindow,
+blankwindow,
+.blank-window,
+.floating-notifications {
   background: transparent;
 }
 
-.notification {
-  border-radius: 8px;
-  margin: 6px 12px;
-  box-shadow: inset 0 -2px #a6bbda;
-  background: rgba(20, 20, 30, 0.85);
-  color: #e8eaed;
-  padding: 10px;
-}
-
-.notification-content {
-  margin: 6px;
-}
-
-.notification-default-image {
-  border-radius: 8px;
-}
-
+/* ── Control centre ───────────────────────────────────────── */
 .control-center {
   background: rgba(10, 10, 15, 0.9);
   border-radius: 12px;
   box-shadow: inset 0 -2px #a6bbda, 0 4px 16px rgba(0, 0, 0, 0.5);
   color: #e8eaed;
-  margin: 10px;
-  padding: 10px;
+  padding: 10px 8px;
 }
 
 .control-center-list {
   background: transparent;
 }
 
-.widget-title {
+.control-center .control-center-list-placeholder {
+  color: #e8eaed;
+  opacity: 0.5;
+}
+
+.widget {
+  margin: 4px 8px;
+  padding: 6px 4px;
+}
+
+/* ── Title and Clear ──────────────────────────────────────── */
+.widget-title > label {
   color: #e8eaed;
   font-size: 1.2rem;
-  margin: 10px;
 }
 
 .widget-title > button {
   background: rgba(255, 255, 255, 0.1);
-  color: #e8eaed;
-  border-radius: 8px;
-  padding: 4px 12px;
   border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #e8eaed;
+  padding: 4px 12px;
 }
 
 .widget-title > button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.widget-dnd {
-  margin: 10px;
+/* ── Do Not Disturb ───────────────────────────────────────── */
+.widget-dnd label {
   color: #e8eaed;
 }
 
-.widget-dnd > switch {
-  border-radius: 8px;
+.widget-dnd switch {
   background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
 }
 
-.widget-dnd > switch:checked {
+.widget-dnd switch:checked {
   background: #89b4fa;
 }
 
-.widget-mpris {
+.widget-dnd switch slider {
+  background: #e8eaed;
+  border: none;
+  border-radius: 6px;
+  box-shadow: none;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 3px;
+}
+
+/* ── Buttons grid (quick toggles, session row) ────────────── */
+.widget-buttons-grid flowboxchild {
+  padding: 0;
+}
+
+.widget-buttons-grid flowboxchild > button {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 8px;
+  box-shadow: inset 0 -2px rgba(166, 187, 218, 0.35);
+  color: #e8eaed;
+  font-size: 17px;
+  min-width: 42px;
+  min-height: 42px;
+  margin: 3px;
+  padding: 0;
+}
+
+.widget-buttons-grid flowboxchild > button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Toggle buttons that are on (Wi-Fi up, muted, recording, ...). */
+.widget-buttons-grid flowboxchild > button.toggle:checked,
+.widget-buttons-grid flowboxchild > button.toggle.active {
+  background: #89b4fa;
+  box-shadow: inset 0 -2px #a6bbda;
+  color: #11111b;
+}
+
+.widget-buttons-grid.session flowboxchild > button {
+  font-size: 18px;
+  min-height: 44px;
+}
+
+/* Battery tile + power profiles share one row. The tile is a picture that
+   swaync-buttons.sh renders on every open (battery.css, imported at the top,
+   points at it); the button only frames it, in every state. */
+.control-center .widget-buttons-grid.power flowboxchild:first-child > button.toggle,
+.control-center .widget-buttons-grid.power flowboxchild:first-child > button.toggle:hover,
+.control-center .widget-buttons-grid.power flowboxchild:first-child > button.toggle:checked {
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border-radius: 12px;
+  box-shadow: none;
+  margin: 3px 6px 3px 3px;
+  min-width: 190px;
+  min-height: 44px;
+}
+
+/* The three profiles read as one segmented control. */
+.control-center .widget-buttons-grid.power flowboxchild:not(:first-child) > button {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 15px;
+  margin: 3px 0;
+  min-width: 40px;
+  min-height: 44px;
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:nth-child(2) > button {
+  border-radius: 8px 0 0 8px;
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:last-child > button {
+  border-radius: 0 8px 8px 0;
+  margin-right: 3px;
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:not(:first-child) > button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:not(:first-child) > button.toggle:checked {
+  background: #89b4fa;
+  border-radius: 8px;
+  color: #11111b;
+}
+
+/* ── Volume and brightness sliders ────────────────────────── */
+.widget-volume > box > label,
+.widget-backlight label {
+  color: #e8eaed;
+  font-size: 16px;
+  min-width: 24px;
+}
+
+.control-center scale {
+  margin: 0 6px;
+  padding: 8px 0;
+}
+
+.control-center scale trough {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  min-height: 6px;
+}
+
+.control-center scale highlight {
+  background: #89b4fa;
+  border: none;
+  border-radius: 8px;
+}
+
+.control-center scale slider {
+  background: #e8eaed;
+  border: none;
+  border-radius: 6px;
+  box-shadow: none;
+  min-width: 14px;
+  min-height: 14px;
+  margin: -4px;
+}
+
+.widget-volume > box > button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #e8eaed;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+}
+
+.per-app-volume {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 10px;
-  margin: 10px;
+  margin: 6px 0 0 0;
+  padding: 4px 6px;
 }
 
-.widget-mpris-player {
-  padding: 5px;
-  margin: 5px;
+/* ── Media player ─────────────────────────────────────────── */
+.widget-mpris {
+  padding: 0;
 }
 
-.widget-mpris-title {
-  font-weight: bold;
+.widget-mpris .widget-mpris-player {
+  border-radius: 8px;
+  box-shadow: none;
+  margin: 4px 8px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay {
+  background-color: rgba(10, 10, 15, 0.7);
+  padding: 8px 10px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-album-art {
+  border-radius: 6px;
+  -gtk-icon-size: 44px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-title {
+  color: #e8eaed;
   font-size: 1.1rem;
+  font-weight: bold;
 }
 
-.widget-mpris-subtitle {
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-subtitle {
+  color: #e8eaed;
   font-size: 0.9rem;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay button {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #e8eaed;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Notification cards ───────────────────────────────────── */
+.notification-row,
+.notification-row:hover,
+.notification-row:focus,
+.notification-group:focus {
+  background: transparent;
+  outline: none;
+}
+
+.notification-row .notification-background {
+  padding: 4px 6px;
+}
+
+.notification-row .notification-background .notification,
+.notification-group.collapsed .notification-row .notification {
+  background: rgba(20, 20, 30, 0.85);
+  border: none;
+  border-radius: 8px;
+  box-shadow: inset 0 -2px #a6bbda;
+  color: #e8eaed;
+  padding: 0;
+}
+
+.notification-row .notification-background .notification.critical {
+  box-shadow: inset 0 -2px #f38ba8;
+}
+
+.notification-row .notification-background .notification .notification-default-action {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: inherit;
+  padding: 10px;
+}
+
+.notification-row .notification-background .notification .notification-default-action:hover,
+.control-center .control-center-list .notification .notification-default-action:hover,
+.notification-group.collapsed:hover .notification-row:not(:only-child) .notification {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notification-row .notification-background .notification .notification-default-action:not(:only-child) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .image {
+  border-radius: 8px;
+  margin: 2px 10px 2px 0;
+  -gtk-icon-filter: none;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .summary {
+  color: #e8eaed;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .time {
+  color: #a6bbda;
+  font-size: 11px;
+  font-weight: normal;
+  margin-right: 26px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .body {
+  color: #e8eaed;
+  font-size: 12px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .body-image {
+  background-color: transparent;
+  border-radius: 8px;
+  margin-top: 6px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content progressbar trough {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  min-height: 6px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content progressbar progress {
+  background: #89b4fa;
+  border: none;
+  border-radius: 8px;
+  min-height: 6px;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  color: #e8eaed;
+  min-width: 22px;
+  min-height: 22px;
+  margin: 6px 6px 0 0;
+  padding: 0;
+}
+
+.close-button:hover {
+  background: #f38ba8;
+  color: #11111b;
+}
+
+.notification-row .notification-background .notification .notification-alt-actions {
+  background: transparent;
+  padding: 0 6px 6px;
+}
+
+.notification-row .notification-background .notification .notification-action {
+  margin: 2px;
+  padding: 0;
+}
+
+.notification-row .notification-background .notification .notification-action > button {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #e8eaed;
+  padding: 6px;
+}
+
+.notification-row .notification-background .notification .notification-action > button:hover {
+  background: #89b4fa;
+  color: #11111b;
+}
+
+/* ── Groups ───────────────────────────────────────────────── */
+.notification-group .notification-group-headers,
+.notification-group .notification-group-buttons {
+  color: #e8eaed;
+  margin: 2px 10px;
+}
+
+.notification-group .notification-group-headers .notification-group-icon {
+  color: #e8eaed;
+  -gtk-icon-size: 20px;
+}
+
+.notification-group .notification-group-headers .notification-group-header {
+  color: #e8eaed;
+  font-weight: 600;
+}
+
+.notification-group .notification-group-buttons button {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #e8eaed;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+}
+
+.notification-group .notification-group-buttons button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+.control-center scrollbar {
+  background: transparent;
+  border: none;
+}
+
+.control-center scrollbar slider {
+  background: rgba(166, 187, 218, 0.4);
+  border-radius: 8px;
+  min-width: 4px;
 }

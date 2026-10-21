@@ -1,0 +1,83 @@
+/* "auch + security" bar — style_auchweather.css plus the security pill.
+ *
+ * Imports instead of copying it. GTK resolves @import against the path Waybar
+ * loaded — ~/.config/waybar/style.css, the switcher's symlink — not against the
+ * symlink's target; that is also how every theme's `@import "colors.css"` gets
+ * the live matugen colours. So:
+ *   themes/style_auchweather.css -> ~/.config/waybar/themes/ (apply-config.sh's copy)
+ *   colors.css, imported again   -> the live colours win over the snapshot that
+ *                                   style_auchweather.css imports from themes/
+ */
+@import "themes/style_auchweather.css";
+@import "colors.css";
+
+/* Security pill — one shield button (sec-picker.sh). Same pill look as the
+   others; the button itself has no chip of its own. */
+.sec-pill,
+#sec-pill {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    box-shadow: inset 0 -2px #a6bbda;
+    margin: 0 4px;
+    padding: 0 10px;
+}
+
+#sec-pill #custom-sec-hub {
+    background: transparent;
+    background-image: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0 4px;
+    color: #a6e3a1;              /* ok: all clear */
+}
+#sec-pill #custom-sec-hub.warning {
+    color: #f9e2af;
+}
+#sec-pill #custom-sec-hub.critical {
+    color: #f38ba8;
+}
+
+/* Notes icon in the clock group — styled like its neighbours (updates,
+   notifications): no chip of its own. */
+#clock-group #custom-notes {
+    background-color: transparent;
+    background-image: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Tray pill — the phone button (phone-menu.sh) and the system tray in one
+   chip, with the look the tray had on its own. */
+.tray-pill,
+#tray-pill {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    box-shadow: inset 0 -2px #a6bbda;
+    margin: 0 4px;
+    padding: 0 9px;
+}
+
+#tray-pill #tray,
+#tray-pill #custom-phone {
+    background: transparent;
+    background-image: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+}
+#tray-pill #tray {
+    padding: 0 0 0 4px;
+}
+#tray-pill #custom-phone {
+    padding: 0 6px 0 0;
+    color: @text;
+}
+#tray-pill #custom-phone.none {
+    color: @text-muted;
+}
+#tray-pill #custom-phone.active {
+    color: #a6e3a1;
+}

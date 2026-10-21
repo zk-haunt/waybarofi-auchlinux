@@ -255,7 +255,18 @@ LUKS_PASSPHRASE2="${LUKS_PASSPHRASE2:-$DEFAULT_LUKS_PASSPHRASE}"
 
 # luksFormat + open using stdin
 printf "%s" "$LUKS_PASSPHRASE" | cryptsetup luksFormat --type luks2 "$ROOT" -
-printf "%s" "$LUKS_PASSPHRASE" | cryptsetup open "$ROOT" cryptroot -
+# TRIM through the encryption layer. Without --allow-discards, dm-crypt swallows
+# every discard, so the SSD never learns which blocks are free and the weekly
+# fstrim.timer does nothing (seen on the first install: DISC-MAX 0B on
+# cryptroot). --persistent writes the flag into the LUKS2 header, so every
+# later boot unlocks with TRIM on — no rd.luks.options=discard needed in the
+# boot entry. Trade-off: someone holding the raw disk can see WHICH blocks are
+# empty (not what was in them); the usual, accepted cost for SSD health.
+# Existing installs: sudo cryptsetup --allow-discards --persistent refresh cryptroot
+
+# baically these but automatic, sudo cryptsetup --allow-discards --persistent refresh cryptroot   # asks for your disk password
+# sudo fstrim -v /                                                  # first trim, right away
+printf "%s" "$LUKS_PASSPHRASE" | cryptsetup open --allow-discards --persistent "$ROOT" cryptroot -
 unset LUKS_PASSPHRASE LUKS_PASSPHRASE2
 
 [[ -e /dev/mapper/cryptroot ]] || die "cryptroot mapping not created — encryption step failed!"
@@ -339,6 +350,11 @@ if [[ "$KERNEL_CHOICE" == "2" ]]; then
   DEFAULT_ENTRY="arch.conf"
 fi
 
+# `default` picks the entry that boots with no key pressed. An entry added
+# later — manual.md §4's "AppArmor test" — does NOT become the default by
+# existing: this line has to be changed too, or the old entry keeps booting
+# and the new one only runs when picked by hand:
+#   sudo sed -i 's/^default .*/default arch-zen-apparmor.conf/' /boot/loader/loader.conf
 cat > /mnt/boot/loader/loader.conf <<EOF
 default $DEFAULT_ENTRY
 timeout 5
@@ -346,6 +362,10 @@ console-mode max
 editor no
 EOF
 
+# rootflags=x-systemd.device-timeout=0: the LUKS passphrase prompt waits as long
+# as it takes, but systemd gave up on the root device after its default 90 s and
+# dropped to emergency mode when the passphrase came later (2026-10-14) — 0
+# makes it wait like the prompt does.
 # ✅ Entry 1: Zen
 if [[ "$KERNEL_CHOICE" == "1" || "$KERNEL_CHOICE" == "3" ]]; then
   cat > /mnt/boot/loader/entries/arch-zen.conf <<EOF
@@ -353,7 +373,7 @@ title   Arch Linux (Zen)
 linux   /vmlinuz-linux-zen
 initrd  /$UCODE.img
 initrd  /initramfs-linux-zen.img
-options rd.luks.name=$LUKS_UUID=cryptroot root=UUID=$ROOT_UUID rw
+options rd.luks.name=$LUKS_UUID=cryptroot root=UUID=$ROOT_UUID rw rootflags=x-systemd.device-timeout=0
 EOF
 fi
 
@@ -364,7 +384,7 @@ title   Arch Linux (Stable)
 linux   /vmlinuz-linux
 initrd  /$UCODE.img
 initrd  /initramfs-linux.img
-options rd.luks.name=$LUKS_UUID=cryptroot root=UUID=$ROOT_UUID rw
+options rd.luks.name=$LUKS_UUID=cryptroot root=UUID=$ROOT_UUID rw rootflags=x-systemd.device-timeout=0
 EOF
 fi
 

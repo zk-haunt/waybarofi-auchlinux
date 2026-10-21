@@ -22,10 +22,12 @@ hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("~/.config/hypr/scripts/restart-
 hl.bind("CTRL + Escape", hl.dsp.exec_cmd("pgrep -x waybar > /dev/null && killall waybar || waybar &"))
 hl.bind(mainMod .. " + Backspace", hl.dsp.exec_cmd("~/.config/hypr/scripts/power-menu.sh"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
+hl.bind(mainMod .. " + ALT + E", hl.dsp.exec_cmd(terminal .. " --class yazi -e yazi"))  -- terminal file manager
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("keepassxc"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("rofi -show calc -modi calc -no-show-match -no-sort -theme ~/.config/rofi/calc/style.rasi"))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = 0 }))
-hl.bind(mainMod .. " + CTRL + F", hl.dsp.window.fullscreen({ mode = 1 }))
+-- Through luafunctions so both refuse while Hypr3D is open (fullscreen there crashes Hyprland).
+hl.bind(mainMod .. " + F", luafunctions.fullscreen(0))
+hl.bind(mainMod .. " + CTRL + F", luafunctions.fullscreen(1))
 hl.bind(mainMod .. " + W", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("~/.config/hypr/scripts/clipboard-menu.sh history"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("~/.config/hypr/scripts/clipboard-menu.sh options"))
@@ -34,6 +36,7 @@ hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 hl.bind(mainMod .. " + N",             hl.dsp.exec_cmd("~/.config/hypr/scripts/nightlight.sh toggle"))
 hl.bind(mainMod .. " + SHIFT + N",     hl.dsp.exec_cmd("~/.config/hypr/scripts/nightlight.sh warmer"))
 hl.bind(mainMod .. " + ALT + N",       hl.dsp.exec_cmd("~/.config/hypr/scripts/nightlight.sh cooler"))
+hl.bind(mainMod .. " + CTRL + N",      hl.dsp.exec_cmd("~/.config/hypr/scripts/notes-menu.sh new"))  -- quick sticky note
 hl.bind(mainMod .. " + SHIFT + G",     hl.dsp.exec_cmd("~/.config/hypr/scripts/nightlight.sh gamma-up"))
 hl.bind(mainMod .. " + ALT + G",       hl.dsp.exec_cmd("~/.config/hypr/scripts/nightlight.sh gamma-down"))
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
@@ -51,6 +54,14 @@ hl.bind(mainMod .. " + ALT + L", hl.dsp.exec_cmd("~/.config/hypr/scripts/localse
 hl.bind("CTRL + SHIFT + Escape", hl.dsp.exec_cmd("kitty --class sysmon-float -o remember_window_size=no -o initial_window_width=1024 -o initial_window_height=768 -e btop"))
 -- Zsh Theme             : toggle starship/fastfetch     (toggle with SUPER + ALT + T)
 hl.bind(mainMod .. " + ALT + T", luafunctions.toggle_zsh_theme)
+
+-- Hypr3D (hyprpm plugin): walk around the workspace in 3D, on/off  (SUPER + ALT + 3)
+-- Inside 3D: mouse looks, WASD moves, Space/Shift up/down, Super + Left Alt switches
+-- between moving and typing into windows. Press it again to go back to 2D.
+hl.bind(mainMod .. " + ALT + 3", luafunctions.toggle_hypr3d)
+-- Hypr3D world picker  : rofi list of worlds, loads the pick live (SUPER + H, or SUPER + CTRL + 3)
+hl.bind(mainMod .. " + H", hl.dsp.exec_cmd("~/.config/hypr/scripts/hypr3d-world.sh"))
+hl.bind(mainMod .. " + CTRL + 3", hl.dsp.exec_cmd("~/.config/hypr/scripts/hypr3d-world.sh"))
 
 -- GTK Theme Picker      : swap system themes            (open with SUPER + SHIFT + T)
 hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd("~/.config/hypr/scripts/gtk-theme-picker.sh"))

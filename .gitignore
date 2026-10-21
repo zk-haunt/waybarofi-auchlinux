@@ -1,0 +1,2 @@
+# Python's bytecode cache — rebuilt automatically whenever a script runs.
+__pycache__/

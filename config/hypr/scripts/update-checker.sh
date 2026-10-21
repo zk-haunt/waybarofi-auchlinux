@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────
 #  update-checker.sh  —  pending pacman/AUR/flatpak updates for Waybar
 #  --status : print the JSON payload for the custom/updates module
-#  (no args): open a terminal and run the full system upgrade
+#  (no args): open a terminal right away and run the full system upgrade
 #  Behaviour ported from lol's HyDE `system.update.sh` — click opens
 #  kitty and runs the real upgrade (no rofi picker), just done directly
 #  instead of via hyde-shell.
@@ -21,16 +21,17 @@ for helper in paru yay; do
     command -v "$helper" &>/dev/null && AUR_HELPER="$helper" && break
 done
 
-OFFICIAL_COUNT=$(checkupdates 2>/dev/null | grep -c '\S')
-AUR_COUNT=0
-[[ -n "$AUR_HELPER" ]] && AUR_COUNT=$("$AUR_HELPER" -Qua 2>/dev/null | grep -c '\S')
-FLATPAK_COUNT=0
-command -v flatpak &>/dev/null && FLATPAK_COUNT=$(flatpak remote-ls --updates 2>/dev/null | grep -c '\S')
-
-COUNT=$((OFFICIAL_COUNT + AUR_COUNT + FLATPAK_COUNT))
-
-# Called with --status: print JSON for Waybar
+# Called with --status: print JSON for Waybar. Only this path counts: both
+# checks go over the network (checkupdates syncs a copy of the package
+# databases), and doing them on a click held the terminal back for seconds.
 if [[ "${1:-}" == "--status" ]]; then
+    OFFICIAL_COUNT=$(checkupdates 2>/dev/null | grep -c '\S')
+    AUR_COUNT=0
+    [[ -n "$AUR_HELPER" ]] && AUR_COUNT=$("$AUR_HELPER" -Qua 2>/dev/null | grep -c '\S')
+    FLATPAK_COUNT=0
+    command -v flatpak &>/dev/null && FLATPAK_COUNT=$(flatpak remote-ls --updates 2>/dev/null | grep -c '\S')
+    COUNT=$((OFFICIAL_COUNT + AUR_COUNT + FLATPAK_COUNT))
+
     if [[ "$COUNT" -eq 0 ]]; then
         echo '{"text":"","tooltip":" Packages are up to date","class":"up-to-date"}'
     else
@@ -41,18 +42,12 @@ if [[ "${1:-}" == "--status" ]]; then
     exit 0
 fi
 
-# Called without args (waybar on-click): open a terminal and run the full
-# system upgrade — official + AUR via the AUR helper's -Syu, then flatpak,
-# exactly like lol's system.update.sh "up" path. No rofi picker.
-if [[ "$COUNT" -eq 0 ]]; then
-    notify-send "System up to date" "No pending updates found." -i system-software-update
-    exit 0
-fi
-
-# Build the upgrade command that runs inside the terminal.
-# Same three glyphs as the waybar tooltip above; the terminal banner had lost
-# them and was printing a bare two-space indent instead.
-upgrade_cmd="printf '\\n󱓽 Official %s   󱓾 AUR %s   󰏓 Flatpak %s\\n\\n' '$OFFICIAL_COUNT' '$AUR_COUNT' '$FLATPAK_COUNT'; "
+# Called without args (waybar on-click): open a terminal at once and run the
+# full system upgrade there — official + AUR via the AUR helper's -Syu, then
+# flatpak, like lol's system.update.sh "up" path. No rofi picker, and no
+# counting first: pacman and flatpak list what they upgrade, or say there is
+# nothing to do, themselves.
+upgrade_cmd=""
 # informant's pacman hook refuses to upgrade while Arch news is unread, and
 # pacman then exits with a terse "failed to run hook" error. Show the news here
 # first — `sudo informant read` prints each item and marks it read — so the
@@ -70,8 +65,8 @@ if [[ -n "$AUR_HELPER" ]]; then
 else
     upgrade_cmd+="if sudo pacman -Syu; then ok=1; else ok=0; fi; "
 fi
-if command -v flatpak &>/dev/null && [[ "$FLATPAK_COUNT" -gt 0 ]]; then
-    upgrade_cmd+="flatpak update; "
+if command -v flatpak &>/dev/null; then
+    upgrade_cmd+="printf '\\n󰏓 Flatpak\\n'; flatpak update; "
 fi
 upgrade_cmd+="if [ \"\$ok\" = 1 ]; then printf '\\n󰄬 Upgrade finished. Press any key to close...'; "
 upgrade_cmd+="else printf '\\n󰅙 Package upgrade did NOT complete — see the output above. Press any key to close...'; fi; "

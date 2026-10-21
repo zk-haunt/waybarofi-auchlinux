@@ -1,0 +1,22 @@
+// Phone button + system tray, as one pill — pulled into a theme via "include",
+// like weather.jsonc. The button shows whether a phone with USB debugging is
+// plugged in (and whether it's mirroring or streaming as a webcam); a click
+// opens the phone dropdown. All in ~/.config/hypr/scripts/phone-menu.sh.
+// Refresh now:  pkill -RTMIN+13 waybar
+{
+    "group/tray-pill": {
+        "orientation": "horizontal",
+        "modules": [
+            "custom/phone",
+            "tray"
+        ]
+    },
+    "custom/phone": {
+        "exec": "$HOME/.config/hypr/scripts/phone-menu.sh --status",
+        "return-type": "json",
+        "interval": 5,
+        "signal": 13,
+        "tooltip": true,
+        "on-click": "$HOME/.config/hypr/scripts/phone-menu.sh"
+    }
+}

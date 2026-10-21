@@ -87,6 +87,15 @@ if pacman -Qq audit &>/dev/null; then
     sudo systemctl enable --now auditd >/dev/null 2>&1 \
         && info "  auditd: enabled" \
         || warn "  auditd: could not enable"
+    # AppArmor listed after bpf in lsm= breaks audit: bpf's hook answers "not
+    # supported" when audit asks for a task's security label, so the kernel
+    # refuses every config change. augenrules puts -b first, so no rules load
+    # and "audit: error in audit_log_subj_ctx" repeats in the kernel log.
+    _lsm="$(cat /sys/kernel/security/lsm 2>/dev/null || true)"
+    if [[ ",$_lsm," == *",bpf,"*"apparmor,"* ]]; then
+        warn "  auditd: the kernel lists bpf before apparmor ($_lsm) — audit rules can't load."
+        warn "          In the boot entry's lsm=, put apparmor before bpf (manual.md §4), then reboot."
+    fi
     # Show auditctl's own error on failure — "failed" alone isn't actionable.
     if _out="$(sudo augenrules --load 2>&1)"; then
         info "  auditd: $(sudo auditctl -l 2>/dev/null | grep -vc '^No rules') rule(s) loaded"
@@ -234,10 +243,15 @@ if pacman -Qq ufw &>/dev/null; then
 fi
 
 # NOTE deliberately NOT automated here:
-#   AppArmor      — needs a bootloader edit (append to the lsm= line in
-#                   /boot/loader/entries/arch-zen.conf, which has none today),
-#                   a reboot, then days of complain-mode tuning. plansecurity.md
+#   AppArmor      — needs a bootloader edit (an lsm= list with apparmor ahead
+#                   of bpf in /boot/loader/entries/arch-zen.conf, which has
+#                   none today — bpf first breaks audit logging), done in a
+#                   copy of that entry, which then has to be made the
+#                   `default` in /boot/loader/loader.conf or normal boots
+#                   keep running without it; a reboot, then days of
+#                   complain-mode tuning. plansecurity.md
 #                   P3 warns that enforcing blind can break a Hyprland rice.
+#                   Step by step, safe to try: manual.md §4.
 #   Secure Boot / TPM — P6, deliberately skipped.
 #   fwupdmgr update / lynis audit system — interactive and judgement-based.
 #                   The fwupd refresh timer above only fetches metadata.

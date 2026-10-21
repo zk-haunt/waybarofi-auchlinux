@@ -20,7 +20,13 @@ INCLUDE=(
     ".zshrc" ".zshenv" ".zprofile"
     "auchlinux"
     "Documents"
+    "Music"          # playlists + recently played (music-menu.sh), plain .m3u
 )
+# KeePassXC databases kept loose in $HOME (e.g. ~/keepass1.kdbx) — the list
+# above only has fixed paths, so these were never backed up.
+shopt -s nullglob
+for f in "$HOME"/*.kdbx; do INCLUDE+=("${f#"$HOME"/}"); done
+shopt -u nullglob
 EXCLUDE=(
     ".config/google-chrome" ".config/BraveSoftware" ".config/Cache" "*/Cache" "*/cache"
     ".local/share/Trash" ".local/share/Steam" "*.sock"

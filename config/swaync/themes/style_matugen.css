@@ -1,0 +1,531 @@
+/* "matugen": a quick-settings control centre after despcodr's hyprland-dots
+   (github.com/despcodr/hyprland-dots). Do-not-disturb switch, a grid of quick
+   toggles and actions, volume and brightness sliders, the media player, then
+   the notification list on wallpaper-tinted cards.
+
+   Every colour comes from colors.css, which matugen regenerates from the
+   wallpaper (config/matugen/templates/colors-swaync.css), so the panel changes
+   with the bar, launcher and terminal instead of drifting away from them.
+
+   Class names are swaync 0.12's (GTK 4): .summary / .body / .time and
+   .widget-buttons-grid flowboxchild > button. The GTK 3-era names some older
+   themes use (.notification-title, .widget-buttons) match nothing any more. */
+
+@import "colors.css";
+/* Generated on every panel open by hypr/scripts/swaync-buttons.sh: points the
+   battery tile at its freshly rendered picture. */
+@import "battery.css";
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+/* Size on the two roots, not on `*`: a size on every node also lands on the
+   label inside each button, so a button's own font-size would never apply. */
+.control-center,
+.floating-notifications {
+  font-size: 12px;
+}
+
+notificationwindow,
+blankwindow,
+.blank-window,
+.floating-notifications {
+  background: transparent;
+}
+
+/* ── Control centre ───────────────────────────────────────── */
+.control-center {
+  background: @panel-bg;
+  border: 1px solid @card-border;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  color: @text;
+  padding: 10px 8px;
+}
+
+.control-center-list {
+  background: transparent;
+}
+
+.control-center .control-center-list-placeholder {
+  color: @text-muted;
+  opacity: 0.6;
+}
+
+.widget {
+  margin: 4px 8px;
+  padding: 6px 4px;
+}
+
+/* ── Do Not Disturb ───────────────────────────────────────── */
+.widget-dnd label {
+  color: @text;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.widget-dnd switch {
+  background: alpha(@text, 0.14);
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.widget-dnd switch:checked {
+  background: @primary;
+}
+
+.widget-dnd switch slider {
+  background: @text;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  min-width: 18px;
+  min-height: 18px;
+  margin: 3px;
+}
+
+.widget-dnd switch:checked slider {
+  background: @on-primary;
+}
+
+/* ── Quick buttons ────────────────────────────────────────── */
+.widget-buttons-grid {
+  padding: 2px 0;
+}
+
+.widget-buttons-grid flowboxchild {
+  padding: 0;
+}
+
+.widget-buttons-grid flowboxchild > button {
+  background: alpha(@text, 0.12);
+  border: none;
+  border-radius: 12px;
+  box-shadow: none;
+  color: @text;
+  font-size: 17px;
+  min-width: 42px;
+  min-height: 42px;
+  margin: 3px;
+  padding: 0;
+}
+
+.widget-buttons-grid flowboxchild > button:hover {
+  background: alpha(@text, 0.22);
+}
+
+/* Toggle buttons that are on (Wi-Fi up, muted, recording, ...). */
+.widget-buttons-grid flowboxchild > button.toggle:checked,
+.widget-buttons-grid flowboxchild > button.toggle.active {
+  background: @primary;
+  color: @on-primary;
+}
+
+.widget-buttons-grid flowboxchild > button.toggle:checked:hover,
+.widget-buttons-grid flowboxchild > button.toggle.active:hover {
+  background: alpha(@primary, 0.85);
+}
+
+/* ── Volume and brightness sliders ────────────────────────── */
+.widget-volume > box > label,
+.widget-backlight label {
+  color: @text;
+  font-size: 16px;
+  min-width: 24px;
+}
+
+.control-center scale {
+  margin: 0 6px;
+  padding: 8px 0;
+}
+
+.control-center scale trough {
+  background: alpha(@text, 0.14);
+  border: none;
+  border-radius: 999px;
+  min-height: 8px;
+}
+
+.control-center scale highlight {
+  background: @primary;
+  border: none;
+  border-radius: 999px;
+}
+
+.control-center scale slider {
+  background: @text;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  min-width: 16px;
+  min-height: 16px;
+  margin: -4px;
+}
+
+/* The per-app expander and its list. */
+.widget-volume > box > button {
+  background: alpha(@text, 0.12);
+  border: none;
+  border-radius: 8px;
+  box-shadow: none;
+  color: @text;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+}
+
+.widget-volume > box > button:hover {
+  background: alpha(@text, 0.22);
+}
+
+.per-app-volume {
+  background: @card-bg;
+  border-radius: 12px;
+  margin: 6px 0 0 0;
+  padding: 4px 6px;
+}
+
+.per-app-volume label {
+  color: @text-muted;
+  font-size: 11px;
+}
+
+/* ── Media player ─────────────────────────────────────────── */
+.widget-mpris {
+  padding: 0;
+}
+
+/* Kept compact: the notification list below it gets the space. */
+.widget-mpris .widget-mpris-player {
+  border-radius: 14px;
+  box-shadow: none;
+  margin: 4px 8px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay {
+  /* Album art is arbitrary and often loud: a strong scrim keeps the title readable. */
+  background-color: @mpris-scrim;
+  padding: 8px 10px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-album-art {
+  border-radius: 8px;
+  -gtk-icon-size: 44px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-title {
+  color: @text;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-subtitle {
+  color: @text-muted;
+  font-size: 11px;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay button {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  color: @text;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay button:hover {
+  background: alpha(@text, 0.15);
+}
+
+/* ── "Notifications" title and Clear ──────────────────────── */
+.widget-title {
+  margin-top: 10px;
+}
+
+.widget-title > label {
+  color: @text;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.widget-title > button {
+  background: @error;
+  border: none;
+  border-radius: 10px;
+  box-shadow: none;
+  color: @on-error;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+.widget-title > button:hover {
+  background: alpha(@error, 0.85);
+}
+
+/* ── Notification cards (popups and the list) ─────────────── */
+
+/* GTK paints its own highlight on the row under a hovered card: a square box
+   behind the rounded one. The card alone carries the look. */
+.notification-row,
+.notification-row:hover,
+.notification-row:focus,
+.notification-group:focus {
+  background: transparent;
+  outline: none;
+}
+
+.notification-row .notification-background {
+  padding: 4px 6px;
+}
+
+/* Popups float over whatever window is under them, so the card is all but
+   opaque: translucent cards let a busy page show through the text. */
+.notification-row .notification-background .notification,
+.notification-group.collapsed .notification-row .notification {
+  background: alpha(@primary-container, 0.98);
+  border: 1px solid alpha(@primary, 0.25);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  color: @on-primary-container;
+  padding: 0;
+}
+
+.notification-row .notification-background .notification.critical,
+.notification-group.collapsed .notification-row .notification.critical {
+  background: alpha(@error-container, 0.98);
+  border: 1px solid @error;
+  color: @on-error-container;
+}
+
+/* swaync loads its own stylesheet at the same priority as this one, so its
+   long selectors would win on specificity over short ones like `.summary`.
+   These spell out the same path. */
+.notification-row .notification-background .notification .notification-default-action {
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+  box-shadow: none;
+  color: inherit;
+  padding: 8px 10px;
+}
+
+.notification-row .notification-background .notification .notification-default-action:hover,
+.control-center .control-center-list .notification .notification-default-action:hover,
+.notification-group.collapsed:hover .notification-row:not(:only-child) .notification {
+  background: alpha(@on-primary-container, 0.07);
+}
+
+.notification-row .notification-background .notification .notification-default-action:not(:only-child) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .image {
+  border-radius: 10px;
+  margin: 2px 10px 2px 0;
+  -gtk-icon-filter: none;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .app-icon {
+  margin: 4px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .summary {
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .time {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  margin-right: 26px;
+  opacity: 0.7;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box .body {
+  color: inherit;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .body-image {
+  background-color: transparent;
+  border-radius: 10px;
+  margin-top: 6px;
+}
+
+/* Volume / brightness / progress hints. */
+.notification-row .notification-background .notification .notification-default-action .notification-content progressbar trough {
+  background: alpha(@on-primary-container, 0.15);
+  border: none;
+  border-radius: 999px;
+  min-height: 6px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content progressbar progress {
+  background: @primary;
+  border: none;
+  border-radius: 999px;
+  min-height: 6px;
+}
+
+.close-button {
+  background: alpha(@on-primary-container, 0.15);
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  color: @on-primary-container;
+  min-width: 22px;
+  min-height: 22px;
+  margin: 6px 6px 0 0;
+  padding: 0;
+}
+
+.close-button:hover {
+  background: @error;
+  color: @on-error;
+}
+
+/* Action buttons under a notification ("Open", "Copy code", ...). */
+.notification-row .notification-background .notification .notification-alt-actions {
+  background: transparent;
+  padding: 0 6px 6px;
+}
+
+.notification-row .notification-background .notification .notification-action {
+  margin: 2px;
+  padding: 0;
+}
+
+.notification-row .notification-background .notification .notification-action > button {
+  background: alpha(@on-primary-container, 0.1);
+  border: none;
+  border-radius: 10px;
+  box-shadow: none;
+  color: @on-primary-container;
+  padding: 6px;
+}
+
+.notification-row .notification-background .notification .notification-action > button:hover,
+.control-center .control-center-list .notification .notification-action:hover > button {
+  background: @primary;
+  color: @on-primary;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-entry {
+  background: alpha(@on-primary-container, 0.1);
+  border: none;
+  border-radius: 10px;
+  caret-color: @on-primary-container;
+  color: @on-primary-container;
+  padding: 6px 10px;
+}
+
+.notification-row .notification-background .notification .notification-default-action .notification-content .inline-reply .inline-reply-button {
+  background: @primary;
+  border: none;
+  border-radius: 10px;
+  color: @on-primary;
+  margin-left: 6px;
+}
+
+/* ── Groups (several notifications from one app) ──────────── */
+.notification-group .notification-group-headers,
+.notification-group .notification-group-buttons {
+  color: @text;
+  margin: 2px 10px;
+}
+
+.notification-group .notification-group-headers .notification-group-icon {
+  color: @text;
+  -gtk-icon-size: 20px;
+}
+
+.notification-group .notification-group-headers .notification-group-header {
+  color: @text;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.notification-group .notification-group-buttons button {
+  background: alpha(@text, 0.12);
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  color: @text;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 8px;
+}
+
+.notification-group .notification-group-buttons button:hover {
+  background: alpha(@text, 0.22);
+}
+
+/* ── Bottom: session row, battery and power profiles ─────────── */
+.widget-buttons-grid.session flowboxchild > button {
+  border-radius: 14px;
+  font-size: 18px;
+  min-height: 44px;
+}
+
+/* Battery tile + power profiles share one row. The tile is a picture that
+   swaync-buttons.sh renders on every open (battery.css, imported at the top,
+   points at it); the button only frames it, in every state. */
+.control-center .widget-buttons-grid.power flowboxchild:first-child > button.toggle,
+.control-center .widget-buttons-grid.power flowboxchild:first-child > button.toggle:hover,
+.control-center .widget-buttons-grid.power flowboxchild:first-child > button.toggle:checked {
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border-radius: 12px;
+  margin: 3px 6px 3px 3px;
+  min-width: 190px;
+  min-height: 44px;
+}
+
+/* The three profiles read as one segmented control. */
+.control-center .widget-buttons-grid.power flowboxchild:not(:first-child) > button {
+  background: alpha(@text, 0.08);
+  border-radius: 0;
+  font-size: 15px;
+  margin: 3px 0;
+  min-width: 40px;
+  min-height: 44px;
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:nth-child(2) > button {
+  border-radius: 12px 0 0 12px;
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:last-child > button {
+  border-radius: 0 12px 12px 0;
+  margin-right: 3px;
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:not(:first-child) > button:hover {
+  background: alpha(@text, 0.14);
+}
+
+.control-center .widget-buttons-grid.power flowboxchild:not(:first-child) > button.toggle:checked {
+  background: @primary;
+  border-radius: 12px;
+  color: @on-primary;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+.control-center scrollbar {
+  background: transparent;
+  border: none;
+}
+
+.control-center scrollbar slider {
+  background: alpha(@text, 0.3);
+  border-radius: 999px;
+  min-width: 4px;
+}

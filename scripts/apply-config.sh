@@ -62,6 +62,9 @@ RUNTIME_EXCLUDES=(
   --exclude=colors.css
   --exclude=color.conf
   --exclude=colors.lua
+  --exclude=flavor.toml               # yazi's "auch" flavor (yazi/flavors/auch.yazi/)
+  # Rewritten by hypr/scripts/swaync-buttons.sh every time the SwayNC panel opens
+  --exclude=battery.css
   # Referenced by the waybar configs but not tracked in the repo
   --exclude=power_menu.xml
   # Caches and history
@@ -96,6 +99,7 @@ FOLDERS=(
   "swaync"
   "waybar"
   "xfce4"
+  "yazi"
   "zsh"
 )
 
@@ -129,6 +133,15 @@ else
   SELECTED_FOLDERS=("${FOLDERS[@]}" "${MERGE_FOLDERS[@]}")
 fi
 
+# Folder arguments mean "just these folders". The extras further down that
+# belong to no folder — the single files (dolphinrc, kdeglobals, mimeapps.list),
+# KeePassXC (killed with -9 so it can't write its ini back), Dolphin state,
+# user units, cursor/GTK setup — run on a full sync only. They used to run on
+# every call, so `apply-config.sh waybar` killed an open KeePassXC and lost
+# any unsaved database change (found 2026-10-09).
+FULL_SYNC=true
+[[ $# -gt 0 ]] && FULL_SYNC=false
+
 contains_folder() {
   local item="$1"
   for f in "${SELECTED_FOLDERS[@]}"; do
@@ -153,6 +166,10 @@ if ! $DRY_RUN && ! $NO_BACKUP; then
 
   BACKUP_PATHS=()
   for folder in "${SELECTED_FOLDERS[@]}"; do
+    # Merge folders are only ever added to, never --delete'd, so there is
+    # nothing to protect — and "Code - OSS" is ~275M of editor cache, which
+    # made a full-sync backup 170M instead of ~9M (seen 2026-10-09).
+    for m in "${MERGE_FOLDERS[@]}"; do [[ $m == "$folder" ]] && continue 2; done
     [[ -d "$TARGET_DIR/$folder" ]] && BACKUP_PATHS+=("$folder")
   done
 
@@ -248,7 +265,7 @@ done
 # other user unit you have ever installed by hand. These are copied in
 # additively instead, and a stale unit is removed by deleting it here and from
 # ~/.config/systemd/user explicitly.
-if [[ -d "$REPO_CONFIG_DIR/systemd/user" ]]; then
+if $FULL_SYNC && [[ -d "$REPO_CONFIG_DIR/systemd/user" ]]; then
   if $DRY_RUN; then
     echo "[DRY] would install systemd --user units + daemon-reload"
   else
@@ -293,6 +310,8 @@ GENERATED_SEEDS=(
   "waybar/colors.css"
   "kitty/color.conf"
   "rofi/colors/colors-matugen.rasi"
+  "yazi/flavors/auch.yazi/flavor.toml"   # theme.toml names this flavor; without it yazi silently uses its default colours
+  "swaync/colors.css"                    # the "matugen" SwayNC theme @imports it; without it the panel loses every colour
 )
 for rel in "${GENERATED_SEEDS[@]}"; do
   src="$REPO_CONFIG_DIR/$rel"
@@ -315,76 +334,85 @@ done
 if $DRY_RUN; then
   echo
   echo "==== DRY RUN complete — nothing was written ===="
-  echo "Not shown/performed in a dry run: individual file copies (dolphinrc,"
-  echo "kdeglobals, mimeapps.list), the VPN module deploy, keepassxc restart,"
-  echo "ksycoca rebuild, chmod sweep, hyprctl reload, waybar/swaync restarts,"
-  echo "gsettings cursor sync, and icon/theme tarball extraction."
+  if $FULL_SYNC; then
+    echo "Not shown/performed in a dry run: individual file copies (dolphinrc,"
+    echo "kdeglobals, mimeapps.list), the VPN module deploy, keepassxc restart,"
+    echo "ksycoca rebuild, chmod sweep, hyprctl reload, waybar/swaync restarts,"
+    echo "gsettings cursor sync, and icon/theme tarball extraction."
+  else
+    echo "Partial sync (${SELECTED_FOLDERS[*]}): only those folders, plus the chmod"
+    echo "sweep, hyprctl reload and waybar/swaync restarts — and the VPN module"
+    echo "deploy if waybar is among them. No single files, keepassxc or theme setup."
+  fi
   echo "Re-run without --dry-run to apply."
   exit 0
 fi
-
-# Sync individual files (like dolphinrc, kdeglobals)
-FILES=(
-  "dolphinrc"
-  "kdeglobals"
-  "dolphinstaterc"
-  "mimeapps.list"
-)
-
-for file in "${FILES[@]}"; do
-  if [ -f "$REPO_CONFIG_DIR/$file" ]; then
-    echo "[Sync] Syncing file $file to ~/.config/..."
-    cp -f "$REPO_CONFIG_DIR/$file" "$TARGET_DIR/$file"
-  fi
-done
 
 # Waybar VPN module script.
 # Kept in scripts/vpn/ with its docs rather than config/waybar/scripts/, but
 # waybar loads it from ~/.config/waybar/scripts/ — and the waybar sync above
 # runs with --delete, so this MUST come after it or the deployed copy is
-# removed on every run.
-if [ -f "$REPO_CONFIG_DIR/../scripts/vpn/vpn.sh" ]; then
+# removed on every run. Hence: whenever waybar was synced, full run or not.
+if contains_folder "waybar" && [ -f "$REPO_CONFIG_DIR/../scripts/vpn/vpn.sh" ]; then
   echo "[Sync] Deploying VPN waybar module script..."
   mkdir -p "$TARGET_DIR/waybar/scripts"
   cp -f "$REPO_CONFIG_DIR/../scripts/vpn/vpn.sh" "$TARGET_DIR/waybar/scripts/vpn.sh"
   chmod +x "$TARGET_DIR/waybar/scripts/vpn.sh"
 fi
 
-# Sync keepassxc config (lives in its own subdir).
-# KeePassXC rewrites its ini on exit, so a running instance would clobber what we
-# deploy. Kill it first (-9, so it can't write back), copy the config, then
-# relaunch — this makes the dark theme (GUI/ApplicationTheme=dark) actually apply.
-if [ -f "$REPO_CONFIG_DIR/keepassxc/keepassxc.ini" ]; then
-  echo "[Sync] Syncing keepassxc config..."
-  kp_was_running=false
-  if pgrep -x keepassxc >/dev/null; then
-    kp_was_running=true
-    pkill -9 -x keepassxc 2>/dev/null
-    sleep 1
+# Full sync only from here to the ksycoca rebuild — see FULL_SYNC at the top.
+if $FULL_SYNC; then
+  # Sync individual files (like dolphinrc, kdeglobals)
+  FILES=(
+    "dolphinrc"
+    "kdeglobals"
+    "dolphinstaterc"
+    "mimeapps.list"
+  )
+
+  for file in "${FILES[@]}"; do
+    if [ -f "$REPO_CONFIG_DIR/$file" ]; then
+      echo "[Sync] Syncing file $file to ~/.config/..."
+      cp -f "$REPO_CONFIG_DIR/$file" "$TARGET_DIR/$file"
+    fi
+  done
+
+  # Sync keepassxc config (lives in its own subdir).
+  # KeePassXC rewrites its ini on exit, so a running instance would clobber what we
+  # deploy. Kill it first (-9, so it can't write back), copy the config, then
+  # relaunch — this makes the dark theme (GUI/ApplicationTheme=dark) actually apply.
+  if [ -f "$REPO_CONFIG_DIR/keepassxc/keepassxc.ini" ]; then
+    echo "[Sync] Syncing keepassxc config..."
+    kp_was_running=false
+    if pgrep -x keepassxc >/dev/null; then
+      kp_was_running=true
+      pkill -9 -x keepassxc 2>/dev/null
+      sleep 1
+    fi
+    mkdir -p "$TARGET_DIR/keepassxc"
+    cp -f "$REPO_CONFIG_DIR/keepassxc/keepassxc.ini" "$TARGET_DIR/keepassxc/keepassxc.ini"
+    if [ "$kp_was_running" = true ]; then
+      echo "[Reload] Restarting keepassxc to apply theme..."
+      (keepassxc >/dev/null 2>&1 &)
+    fi
   fi
-  mkdir -p "$TARGET_DIR/keepassxc"
-  cp -f "$REPO_CONFIG_DIR/keepassxc/keepassxc.ini" "$TARGET_DIR/keepassxc/keepassxc.ini"
-  if [ "$kp_was_running" = true ]; then
-    echo "[Reload] Restarting keepassxc to apply theme..."
-    (keepassxc >/dev/null 2>&1 &)
+
+  if [ -f "$REPO_CONFIG_DIR/dolphinstaterc" ]; then
+    mkdir -p "$HOME/.local/state"
+    cp -f "$REPO_CONFIG_DIR/dolphinstaterc" "$HOME/.local/state/dolphinstaterc"
   fi
-fi
 
-if [ -f "$REPO_CONFIG_DIR/dolphinstaterc" ]; then
-  mkdir -p "$HOME/.local/state"
-  cp -f "$REPO_CONFIG_DIR/dolphinstaterc" "$HOME/.local/state/dolphinstaterc"
-fi
+  if [ -f "$REPO_CONFIG_DIR/dolphin_kxmlgui/dolphinui.rc" ]; then
+    echo "[Sync] Syncing Dolphin UI layout to ~/.local/share/kxmlgui5/dolphin/..."
+    mkdir -p "$HOME/.local/share/kxmlgui5/dolphin"
+    cp -f "$REPO_CONFIG_DIR/dolphin_kxmlgui/dolphinui.rc" "$HOME/.local/share/kxmlgui5/dolphin/dolphinui.rc"
+  fi
 
-if [ -f "$REPO_CONFIG_DIR/dolphin_kxmlgui/dolphinui.rc" ]; then
-  echo "[Sync] Syncing Dolphin UI layout to ~/.local/share/kxmlgui5/dolphin/..."
-  mkdir -p "$HOME/.local/share/kxmlgui5/dolphin"
-  cp -f "$REPO_CONFIG_DIR/dolphin_kxmlgui/dolphinui.rc" "$HOME/.local/share/kxmlgui5/dolphin/dolphinui.rc"
-fi
-
-if [ -f "$REPO_CONFIG_DIR/dolphin_global_dir" ]; then
-  echo "[Sync] Syncing Dolphin global sorting layout..."
-  mkdir -p "$HOME/.local/share/dolphin/view_properties/global"
-  cp -f "$REPO_CONFIG_DIR/dolphin_global_dir" "$HOME/.local/share/dolphin/view_properties/global/.directory"
+  if [ -f "$REPO_CONFIG_DIR/dolphin_global_dir" ]; then
+    echo "[Sync] Syncing Dolphin global sorting layout..."
+    mkdir -p "$HOME/.local/share/dolphin/view_properties/global"
+    cp -f "$REPO_CONFIG_DIR/dolphin_global_dir" "$HOME/.local/share/dolphin/view_properties/global/.directory"
+  fi
 fi
 
 # Rebuild the KDE application cache (ksycoca).
@@ -392,7 +420,8 @@ fi
 # ~/.config/menus/hyprland-applications.menu (synced above) to exist —
 # without it the cache is built with ZERO applications and Dolphin/KIO
 # cannot open files with their default apps (imv, mpv, ark, ...).
-if command -v kbuildsycoca6 >/dev/null 2>&1; then
+# Needed after a full sync, or whenever menus/ itself was synced.
+if { $FULL_SYNC || contains_folder "menus"; } && command -v kbuildsycoca6 >/dev/null 2>&1; then
   echo "[KDE] Rebuilding application cache (ksycoca)..."
   kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 fi
@@ -430,6 +459,12 @@ if pgrep -x "Hyprland" > /dev/null; then
     echo "[Reload] Restarting Dunst notification daemon..."
     systemctl --user restart dunst || systemctl --user start dunst || true
   fi
+fi
+
+# Cursor, icon and GTK theme setup — full sync only (see FULL_SYNC at the top).
+if ! $FULL_SYNC; then
+  echo "==== Applied: ${SELECTED_FOLDERS[*]} (partial sync — theme setup skipped) ===="
+  exit 0
 fi
 
 # Sync GTK Settings to dconf/gsettings

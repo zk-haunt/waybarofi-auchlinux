@@ -13,6 +13,17 @@ alias secscan="$HOME/auchlinux/scripts/malware-scanner.sh"
 alias changecursor="~/.config/hypr/scripts/gtk-theme-picker.sh cursor"
 alias changetheme="~/.config/hypr/scripts/gtk-theme-picker.sh"
 
+#  Everyday command defaults — interactive shells only; scripts get the plain
+# commands. \cmd or `command cmd` skips an alias once.
+# --color=auto, not always: "always" also sends colour codes into pipes and
+# files (ls | grep …, ls > list.txt). Replaces oh-my-zsh's ls --color=tty.
+alias ls='ls -alh --color=auto --group-directories-first'
+alias rm='rm -I --preserve-root'   # asks once before deleting 3+ files or a folder — rm -f/-rf still won't ask
+alias cp='cp -i'                   # asks before overwriting; cp -f to skip
+alias mv='mv -i'                   # asks before overwriting; mv -f to skip
+alias mkdir='mkdir -p'             # makes missing parents, no error if it exists
+alias ping='ping -c 4'             # four pings, then stops; ping -c 100 … for more
+
 #  Autosuggestions — make suggestions visible (default fg=8 is invisible on dark backgrounds)
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#888888,underline"
 

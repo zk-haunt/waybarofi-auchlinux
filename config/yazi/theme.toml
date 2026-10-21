@@ -1,0 +1,26 @@
+# Yazi theme — layout and symbols only. Colours come from the "auch" flavor,
+# which matugen rewrites from the wallpaper (config/matugen/templates/
+# yazi-flavor.toml -> ~/.config/yazi/flavors/auch.yazi/flavor.toml), the same
+# way kitty, rofi and Waybar get theirs. Anything not set here or in the flavor
+# is Yazi 26.9.1's preset.
+
+[flavor]
+dark  = "auch"
+light = "auch"
+
+[mgr]
+border_symbol = "│"
+marker_symbol = "▎"
+
+# Rounded ends on tabs, the hovered row and the status bar segments — the same
+# pill shapes as the Waybar groups and rofi rows.
+[tabs]
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[indicator]
+padding = { open = "", close = "" }
+
+[status]
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }

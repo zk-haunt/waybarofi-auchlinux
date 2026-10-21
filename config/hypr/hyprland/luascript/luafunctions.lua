@@ -315,6 +315,34 @@ function M.pin_window()
     hl.dispatch(hl.dsp.window.pin())         -- toggle pin
 end
 
+-- Toggle Hypr3D, the hyprpm plugin that turns the workspace into a walkable 3D
+-- room (github.com/samine825/Hypr3D). hl.plugin.hypr3d only exists once hyprpm
+-- has loaded the plugin, which happens after this file has run, so it is looked
+-- up on every press; without the plugin the key says so instead of doing nothing.
+function M.toggle_hypr3d()
+    local hypr3d = hl.plugin and hl.plugin.hypr3d
+    if hypr3d then
+        hypr3d.toggle()
+    else
+        os.execute("notify-send -a 'Hypr3D' -i 'dialog-information' -u low 'Hypr3D is not loaded' 'hyprpm add https://github.com/samine825/Hypr3D, then hyprpm enable hypr3d' &")
+    end
+end
+
+-- Fullscreen toggle (mode 0 = fullscreen, 1 = maximise), except inside Hypr3D:
+-- fullscreening a window in the 3D room crashed Hyprland on 2026-10-21 (SEGV in
+-- the blur pass, CSurfacePassElement::needsLiveBlur → CMonitor::useFP16). Apps asking
+-- for fullscreen themselves are blocked by a window rule in hyprland/hypr3d.lua.
+function M.fullscreen(mode)
+    return function()
+        local hypr3d = hl.plugin and hl.plugin.hypr3d
+        if hypr3d and hypr3d.active() then
+            os.execute("notify-send -a 'Hypr3D' -i 'dialog-warning' -u low 'No fullscreen in 3D' 'It crashes Hyprland there. Leave 3D first (Super + Alt + 3).' &")
+            return
+        end
+        hl.dispatch(hl.dsp.window.fullscreen({ mode = mode }))
+    end
+end
+
 -- Expose globally for convenience in other modules
 _G.luafunctions = M
 

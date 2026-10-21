@@ -1,0 +1,23 @@
+// Security pill — one shield button. Kept in its own file and pulled into a
+// theme via "include", like weather.jsonc. Its status sums up clean-up, logs,
+// firewall and AppArmor; a click opens a dropdown under the button listing
+// them, and each row opens its menu (system-menu.sh / security-menu.sh) at the
+// same spot. All in ~/.config/hypr/scripts/sec-picker.sh.
+// Refresh now:  pkill -RTMIN+11 waybar
+{
+    "group/sec-pill": {
+        "orientation": "horizontal",
+        "modules": [
+            "custom/sec-hub"
+        ]
+    },
+    "custom/sec-hub": {
+        "exec": "$HOME/.config/hypr/scripts/sec-picker.sh --status",
+        "return-type": "json",
+        "interval": 60,
+        "signal": 11,
+        "tooltip": true,
+        "on-click": "$HOME/.config/hypr/scripts/sec-picker.sh",
+        "on-click-right": "$HOME/.config/hypr/scripts/security-menu.sh logs"
+    }
+}

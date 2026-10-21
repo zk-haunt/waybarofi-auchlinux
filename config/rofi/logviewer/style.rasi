@@ -1,0 +1,148 @@
+/**
+ * ROFI Layout — security menu / log viewer
+ *
+ * Used by ~/.config/hypr/scripts/security-menu.sh. Same look as the clipboard
+ * menu (clipboard/style.rasi: colours, font, wallpaper banner), but wide enough
+ * for log lines, with the view's title in front of the search field and a
+ * message area for the summary line.
+ */
+
+// Config //
+configuration {
+    show-icons:                  false;
+}
+
+* {
+    font:               "JetBrainsMono Nerd Font Propo 10";
+    main-bg:            #11111be6;
+    main-fg:            #cdd6f4ff;
+    main-br:            #cba6f7ff;
+    main-ex:            #f5e0dcff;
+    muted-fg:           #a6adc8ff;
+    select-bg:          #b4befeff;
+    select-fg:          #11111bff;
+    separatorcolor:     transparent;
+    border-color:       transparent;
+}
+
+// Main //
+window {
+    width:                       60em;
+    height:                      36em;
+    transparency:                "real";
+    fullscreen:                  false;
+    enabled:                     true;
+    cursor:                      "default";
+    spacing:                     0em;
+    padding:                     0em;
+    border:                      2px;
+    border-color:                @main-br;
+    border-radius:               12px;
+    background-color:            @main-bg;
+}
+mainbox {
+    enabled:                     true;
+    spacing:                     0em;
+    padding:                     0.5em;
+    orientation:                 vertical;
+    children:                    [ "wallbox" , "message" , "listbox" ];
+    background-color:            transparent;
+}
+wallbox {
+    spacing:                     0em;
+    padding:                     0em;
+    expand:                      false;
+    orientation:                 horizontal;
+    background-color:            transparent;
+    background-image:            url("~/.cache/auch/wall.blur", width);
+    children:                    [ "wallframe" , "inputbar" ];
+}
+wallframe {
+    width:                       5em;
+    spacing:                     0em;
+    padding:                     0em;
+    expand:                      false;
+    background-color:            @main-bg;
+    background-image:            url("~/.cache/auch/wall.quad", width);
+}
+
+// Inputs //
+inputbar {
+    enabled:                     true;
+    spacing:                     0.8em;
+    padding:                     0em 1.2em;
+    children:                    [ "prompt" , "entry" ];
+    background-color:            @main-bg;
+    expand:                      true;
+}
+prompt {
+    enabled:                     true;
+    padding:                     1.6em 0em;
+    text-color:                  @main-br;
+    background-color:            transparent;
+}
+entry {
+    enabled:                     true;
+    padding:                     1.6em 0em;
+    text-color:                  @main-fg;
+    background-color:            transparent;
+    placeholder:                 "Search…";
+    placeholder-color:           #6c7086ff;
+}
+
+// Message (the summary line under the banner) //
+message {
+    enabled:                     true;
+    padding:                     0.6em 0.8em 0.2em 0.8em;
+    background-color:            transparent;
+}
+textbox {
+    padding:                     0em;
+    text-color:                  @muted-fg;
+    background-color:            transparent;
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+}
+
+// Lists //
+listbox {
+    spacing:                     0em;
+    padding:                     0em;
+    orientation:                 vertical;
+    children:                    [ "listview" ];
+    background-color:            transparent;
+}
+listview {
+    enabled:                     true;
+    padding:                     0.5em;
+    columns:                     1;
+    lines:                       14;
+    cycle:                       true;
+    fixed-height:                true;
+    fixed-columns:               false;
+    expand:                      true;
+    cursor:                      "default";
+    background-color:            transparent;
+    text-color:                  @main-fg;
+}
+
+// Elements //
+element {
+    enabled:                     true;
+    padding:                     0.45em 0.6em;
+    cursor:                      pointer;
+    background-color:            transparent;
+    text-color:                  @main-fg;
+    border-radius:               8px;
+}
+element selected.normal {
+    background-color:            @select-bg;
+    text-color:                  @select-fg;
+}
+element-text {
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+    cursor:                      inherit;
+    background-color:            transparent;
+    text-color:                  inherit;
+}

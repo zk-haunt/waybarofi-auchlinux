@@ -6,7 +6,7 @@
   "control-center-margin-bottom": 10,
   "control-center-margin-right": 10,
   "control-center-margin-left": 10,
-  "notification-icon-size": 64,
+  "notification-icon-size": 40,
   "notification-body-image-height": 100,
   "notification-body-image-width": 200,
   "timeout": 10,
@@ -23,23 +23,159 @@
   "hide-on-action": true,
   "script-fail-notify": true,
   "widgets": [
-    "title",
     "dnd",
+    "buttons-grid",
+    "volume",
+    "backlight",
     "mpris",
-    "notifications"
+    "title",
+    "notifications",
+    "buttons-grid#session",
+    "buttons-grid#power"
   ],
   "widget-config": {
-    "title": {
-      "text": "Notifications",
-      "clear-all-button": true,
-      "button-text": "Clear All"
-    },
     "dnd": {
       "text": "Do Not Disturb"
     },
+    "buttons-grid": {
+      "buttons-per-row": 6,
+      "actions": [
+        {
+          "label": "󰖩",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh wifi'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh wifi status'"
+        },
+        {
+          "label": "󰂯",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh bluetooth'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh bluetooth status'"
+        },
+        {
+          "label": "󰖔",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh nightlight'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh nightlight status'"
+        },
+        {
+          "label": "󰅶",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh caffeine'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh caffeine status'"
+        },
+        {
+          "label": "󰀝",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh airplane'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh airplane status'"
+        },
+        {
+          "label": "󰌾",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh lock'"
+        },
+        {
+          "label": "󰹑",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh screenshot'"
+        },
+        {
+          "label": "󰑋",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh record'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh record status'"
+        },
+        {
+          "label": "󰖁",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh mute'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh mute status'"
+        },
+        {
+          "label": "󰍭",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh mic'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh mic status'"
+        },
+        {
+          "label": "󰍃",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh logout'"
+        },
+        {
+          "label": "󰐥",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh power'"
+        }
+      ]
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": true,
+      "show-per-app-label": true,
+      "expand-button-label": "󰅀",
+      "collapse-button-label": "󰅃"
+    },
+    "backlight": {
+      "label": "󰃟",
+      "device": "amdgpu_bl1"
+    },
     "mpris": {
-      "image-size": 96,
-      "image-radius": 12
+      "show-album-art": "when-available",
+      "autohide": true
+    },
+    "title": {
+      "text": "Notifications",
+      "clear-all-button": true,
+      "button-text": "Clear"
+    },
+    "buttons-grid#session": {
+      "buttons-per-row": 4,
+      "actions": [
+        {
+          "label": "󰌾",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh lock'"
+        },
+        {
+          "label": "󰒲",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh suspend'"
+        },
+        {
+          "label": "󰜉",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh reboot'"
+        },
+        {
+          "label": "󰐥",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh shutdown'"
+        }
+      ]
+    },
+    "buttons-grid#power": {
+      "buttons-per-row": 4,
+      "actions": [
+        {
+          "label": "",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh battery'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh battery status'"
+        },
+        {
+          "label": "",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh performance'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh performance status'"
+        },
+        {
+          "label": "",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh balanced'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh balanced status'"
+        },
+        {
+          "label": "",
+          "type": "toggle",
+          "command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh power-saver'",
+          "update-command": "sh -c '$HOME/.config/hypr/scripts/swaync-buttons.sh power-saver status'"
+        }
+      ]
     }
-  }
+  },
+  "text-empty": "You're all caught up."
 }

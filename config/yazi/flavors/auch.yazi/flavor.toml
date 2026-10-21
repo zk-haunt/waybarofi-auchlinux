@@ -1,0 +1,119 @@
+# Yazi flavor "auch" — colours from the wallpaper, written by matugen to
+# ~/.config/yazi/flavors/auch.yazi/flavor.toml on every wallpaper change.
+# Edit this template, not that file. Layout and symbols live in
+# config/yazi/theme.toml; this is colours only.
+#
+# Same roles as the kitty template: primary is the accent, secondary the
+# blue-ish second colour, tertiary the highlight, error the red.
+# Section and key names follow Yazi 26.9.1's preset theme-dark.toml.
+
+[mgr]
+cwd             = { fg = "#c1c1ff", bold = true }
+find_keyword    = { fg = "#e9b9d3", bold = true, italic = true, underline = true }
+find_position   = { fg = "#c6c4dd", bg = "reset", bold = true, italic = true }
+symlink_target  = { fg = "#918f9a", italic = true }
+marker_copied   = { fg = "#c1c1ff",   bg = "#c1c1ff" }
+marker_cut      = { fg = "#ffb4ab",     bg = "#ffb4ab" }
+marker_marked   = { fg = "#c6c4dd", bg = "#c6c4dd" }
+marker_selected = { fg = "#e9b9d3",  bg = "#e9b9d3" }
+count_copied    = { fg = "#2a2a60",  bg = "#c1c1ff" }
+count_cut       = { fg = "#690005",    bg = "#ffb4ab" }
+count_selected  = { fg = "#46263a", bg = "#e9b9d3" }
+border_style    = { fg = "#47464f" }
+
+[tabs]
+active   = { fg = "#2a2a60", bg = "#c1c1ff", bold = true }
+inactive = { fg = "#c8c5d0", bg = "#2a292f" }
+
+[mode]
+normal_main = { fg = "#2a2a60", bg = "#c1c1ff", bold = true }
+normal_alt  = { fg = "#c1c1ff", bg = "#2a292f" }
+select_main = { fg = "#46263a", bg = "#e9b9d3", bold = true }
+select_alt  = { fg = "#e9b9d3", bg = "#2a292f" }
+unset_main  = { fg = "#690005", bg = "#ffb4ab", bold = true }
+unset_alt   = { fg = "#ffb4ab", bg = "#2a292f" }
+
+[indicator]
+parent  = { fg = "#e2e0f9", bg = "#454559" }
+current = { fg = "#2a2a60", bg = "#c1c1ff", bold = true }
+preview = { fg = "#e2e0f9", bg = "#454559" }
+
+[status]
+perm_sep        = { fg = "#918f9a" }
+perm_type       = { fg = "#c1c1ff" }
+perm_read       = { fg = "#e9b9d3" }
+perm_write      = { fg = "#ffb4ab" }
+perm_exec       = { fg = "#c6c4dd" }
+progress_label  = { fg = "#e4e1e9", bold = true }
+progress_normal = { fg = "#c1c1ff", bg = "#2a292f" }
+progress_error  = { fg = "#ffb4ab", bg = "#2a292f" }
+
+[which]
+mask            = { bg = "#1f1f25" }
+cand            = { fg = "#c1c1ff" }
+rest            = { fg = "#918f9a" }
+desc            = { fg = "#c8c5d0" }
+separator_style = { fg = "#47464f" }
+
+[confirm]
+border  = { fg = "#c1c1ff" }
+title   = { fg = "#c1c1ff", bold = true }
+btn_yes = { fg = "#2a2a60", bg = "#c1c1ff" }
+
+[spot]
+border   = { fg = "#c1c1ff" }
+title    = { fg = "#c1c1ff" }
+tbl_col  = { fg = "#c6c4dd" }
+tbl_cell = { fg = "#2a2a60", bg = "#c1c1ff" }
+
+[notify]
+title_info  = { fg = "#c1c1ff" }
+title_warn  = { fg = "#e9b9d3" }
+title_error = { fg = "#ffb4ab" }
+
+[pick]
+border = { fg = "#c1c1ff" }
+active = { fg = "#c1c1ff", bold = true }
+
+[input]
+border   = { fg = "#c1c1ff" }
+title    = { fg = "#c1c1ff" }
+selected = { fg = "#2a2a60", bg = "#c1c1ff" }
+
+[cmp]
+border = { fg = "#c1c1ff" }
+active = { fg = "#2a2a60", bg = "#c1c1ff" }
+
+[tasks]
+border  = { fg = "#c1c1ff" }
+title   = { fg = "#c1c1ff" }
+hovered = { fg = "#c1c1ff", bold = true }
+
+[help]
+border  = { fg = "#c1c1ff" }
+chord   = { fg = "#c6c4dd" }
+hovered = { fg = "#2a2a60", bg = "#c1c1ff", bold = true }
+
+# The preset's rules, recoloured. A flavor's rules replace the preset's
+# completely, so every rule is repeated here.
+[filetype]
+rules = [
+	# Image
+	{ mime = "**/image/*", fg = "#e9b9d3" },
+	# Media
+	{ mime = "**/{audio,video}/*", fg = "#c6c4dd" },
+	# Archive
+	{ mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#ffb4ab" },
+	# Document
+	{ mime = "**/application/{pdf,doc,rtf}", fg = "#c1c1ff" },
+	# Virtual file system
+	{ mime = "vfs/{absent,stale}", fg = "#918f9a" },
+	# Special file
+	{ url = "*", is = "orphan", bg = "#93000a" },
+	{ url = "*", is = "exec"  , fg = "#c1c1ff" },
+	# Dummy file
+	{ url = "*", is = "dummy", bg = "#93000a" },
+	{ url = "*/", is = "dummy", bg = "#93000a" },
+	# Fallback
+	{ url = "*/", fg = "#c6c4dd" }
+]

@@ -74,6 +74,21 @@ FallbackDNS=
 DNSOverTLS=yes
 DNSSEC=allow-downgrade
 Cache=yes
+# LLMNR is Windows' fallback for names DNS can't resolve: the query goes out to
+# the whole local network, and any host there can answer it — on a shared
+# network, that's a way to point this machine at the wrong place. Nothing here
+# needs it. Off globally, so a per-connection setting can't turn it back on.
+# mDNS stays on: printers and Chromecast are found through it.
+LLMNR=no
+# Send every lookup to the servers above, never to the ones a network hands
+# out. Without this, a DHCP-pushed resolver is asked too, on any link marked as
+# the default route — and strict DoT doesn't stop that when the pushed server
+# speaks DoT itself: a Wi-Fi pushing 8.8.8.8 had lookups going to Google
+# (2026-10-09). "~." is a route-only domain matching every name, so these
+# servers are always the best match (systemd-resolved.service(8), "Protocols
+# and Routing"). A link with its own more specific domain, like a VPN's, still
+# gets its names.
+Domains=~.
 EOF
 
 # 2. enable + (re)start the resolver

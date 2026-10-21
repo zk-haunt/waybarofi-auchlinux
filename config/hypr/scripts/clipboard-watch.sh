@@ -25,7 +25,13 @@ if ! pgrep -u "$USER" -f "wl-paste.*--type text.*cliphist-store-filtered" >/dev/
 fi
 
 # Images are not filtered: a password manager does not offer image/* with the
-# hint, and screenshots are the whole point of image history.
-if ! pgrep -u "$USER" -f "wl-paste.*--type image.*cliphist store" >/dev/null; then
-  wl-paste --type image --watch cliphist store >/dev/null 2>&1 &
+# hint, and screenshots are the whole point of image history. They go through
+# cliphist-store-image.sh, which keeps only the newest 7 — bare `cliphist store`
+# kept every image forever.
+STORE_IMAGE="$HOME/.config/hypr/scripts/cliphist-store-image.sh"
+
+if ! pgrep -u "$USER" -f "wl-paste.*--type image.*cliphist-store-image" >/dev/null; then
+  # Replace the old unpruned watcher rather than running both.
+  pkill -u "$USER" -f "wl-paste.*--type image.*cliphist store" 2>/dev/null
+  wl-paste --type image --watch "$STORE_IMAGE" >/dev/null 2>&1 &
 fi

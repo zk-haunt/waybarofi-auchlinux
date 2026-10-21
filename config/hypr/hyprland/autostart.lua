@@ -7,7 +7,12 @@
 hl.on("hyprland.start", function()
     -- Import display environment variables into systemd
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP DISPLAY")
-    
+
+    -- Load the hyprpm plugins marked enabled (`hyprpm list`), e.g. Hypr3D on SUPER + ALT + 3.
+    -- hyprpm loads them into the running session only; without this they are gone after
+    -- a re-login. With none enabled it does nothing. -n: notify if a load fails.
+    hl.exec_cmd("hyprpm reload -n")
+
     -- Start services via systemd user units
     hl.exec_cmd("systemctl --user start waybar")
     hl.exec_cmd("systemctl --user start hypridle")

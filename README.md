@@ -170,12 +170,13 @@ Independent of each other, run whenever — after the steps above.
 
 | Script | What it sets up |
 |---|---|
-| [`scripts/harden-dns.sh`](scripts/harden-dns.sh) | Encrypted DNS (DoT + DNSSEC). Firewall is ufw now, set up by `harden-system.sh` (next row). |
+| [`scripts/harden-dns.sh`](scripts/harden-dns.sh) | Encrypted DNS (DoT + DNSSEC), LLMNR off. Firewall is ufw now, set up by `harden-system.sh` (next row). |
 | [`scripts/harden-system.sh`](scripts/harden-system.sh) | System hardening, run by `install-packages.sh` step 9: ufw (default-deny + LocalSend ports), sysctl, coredumps off, removable-media options, unused kernel modules blocked, auditd with a small ruleset, time sync, `/boot` root-only, fwupd metadata refresh, informant news gate. Configs live in [`config/etc/`](config/etc/). Re-run it after editing anything there. |
 | [`scripts/zram.sh`](scripts/zram.sh) | Compressed swap in RAM (zram), zswap off. Run by `install-packages.sh` step 11; `--status` / `--revert` to inspect or undo. |
 | [`malware-scan.timer`](config/systemd/user/malware-scan.timer) | Weekly CVE + AUR-integrity scan (`scripts/malware-scanner.sh --quiet`); a notification only when something needs attention. Enabled by `apply-config.sh`. |
 | [`scripts/virt/virt-manager.sh`](scripts/virt/virt-manager.sh) | QEMU/KVM + virt-manager. `virt/kvm.sh` then builds throwaway VMs. |
 | [`scripts/steam/steam.sh`](scripts/steam/steam.sh) | Steam + Vulkan GPU drivers. |
+| [`scripts/ollama.sh`](scripts/ollama.sh) | Local LLMs (CPU-only): ollama, off at boot, memory-capped so a long session can't freeze the desktop. Which model to use: [`llm-findings.md`](llm-findings.md). |
 | [`scripts/easyeffects/easyeffects.sh`](scripts/easyeffects/easyeffects.sh) | EasyEffects audio EQ + presets. |
 | [`scripts/vpn/vpn.sh`](scripts/vpn/README.md) | WireGuard VPN + waybar indicator. |
 | [`scripts/vtube/vtube.sh`](scripts/vtube/README.md) | VTube face-tracking pipeline. |

@@ -82,7 +82,9 @@ hl.window_rule({
     name  = "move-hyprland-run",
     match = { class = "hyprland-run" },
 
-    move  = "20 monitor_h-120",
+    -- Table form: the old "20 monitor_h-120" string is silently ignored by the
+    -- Lua config (same as the PiP and sticky-note rules below).
+    move  = { 20, "monitor_h - 120" },
     float = true,
 })
 
@@ -164,7 +166,44 @@ hl.window_rule({
     float            = true,
     keep_aspect_ratio = true,
     pin              = true,
-    move             = "(100%-w-20) (100%-h-20)",
+    -- Bottom-right, 20 px in. Table form with constants: the old
+    -- "(100%-w-20) (100%-h-20)" string was silently ignored (the window landed
+    -- centred, checked 2026-10-10), and window_w/h aren't this size yet when
+    -- move runs — so the offsets are 640 + 20 and 360 + 20.
+    move             = { "monitor_w - 660", "monitor_h - 380" },
     size             = "640 360",
 })
 
+-- ── Sticky notes ───────────────────────────────────────────────
+-- Notes pinned from the notes menu (scripts/notes-menu.sh): small floating
+-- kittys on every workspace (pin). notes-menu.sh gives each the first free
+-- slot, sticky-note-1..3, and each slot sits lower down the right edge, so
+-- two pinned notes don't land on top of each other. Lua rules take move as a
+-- table; the old "(100%-w-20) 70" string form is silently ignored. And
+-- window_w isn't the 380 below yet when move runs (it's kitty's first 640), so
+-- the x offset is the constant 380 + 20.
+hl.window_rule({
+    name    = "sticky-note",
+    match   = { class = "^sticky-note-[0-9]+$" },
+    float   = true,
+    pin     = true,
+    size    = "380 240",
+    opacity = "0.95 0.90",
+})
+hl.window_rule({ name = "sticky-note-1", match = { class = "^sticky-note-1$" }, move = { "monitor_w - 400", 70 } })
+hl.window_rule({ name = "sticky-note-2", match = { class = "^sticky-note-2$" }, move = { "monitor_w - 400", 330 } })
+hl.window_rule({ name = "sticky-note-3", match = { class = "^sticky-note-3$" }, move = { "monitor_w - 400", 590 } })
+
+-- ── Phone mirror / camera preview (scrcpy) ──────────────────────
+-- Floating, so scrcpy sizes its window to the phone's picture itself — upright
+-- or sideways. Both layouts are wanted, so it's per title: mirror.sh opens the
+-- mirror as "Phone" (floats) or "Phone · tiled" (no rule → tiles), whichever
+-- the phone menu last saw; the webcam preview is "Webcam" and always floats.
+hl.window_rule({
+    name  = "scrcpy-float",
+    match = { class = "^scrcpy$", title = "^(Phone|Webcam)$" },
+    float = true,
+})
+
+-- Hypr3D world, sky and fullscreen guard (hyprpm plugin; does nothing when it isn't loaded).
+require("hyprland/hypr3d")

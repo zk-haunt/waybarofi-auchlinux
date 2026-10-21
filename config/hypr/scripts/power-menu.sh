@@ -56,7 +56,16 @@ lock_screen() {
   pidof hyprlock > /dev/null || hyprlock
 }
 
-choice="$(printf '%s\n' "$options" | menu "System" 5)"
+# An action name skips the tile menu and goes straight to that action, confirm
+# step included: the SwayNC panel's Lock and Logout buttons use this.
+case "${1:-}" in
+  lock)     choice="$ICON_LOCK" ;;
+  suspend)  choice="$ICON_SUSPEND" ;;
+  logout)   choice="$ICON_LOGOUT" ;;
+  restart)  choice="$ICON_RESTART" ;;
+  shutdown) choice="$ICON_SHUTDOWN" ;;
+  *)        choice="$(printf '%s\n' "$options" | menu "System" 5)" ;;
+esac
 [[ -z "$choice" ]] && exit 0
 
 case "$choice" in
