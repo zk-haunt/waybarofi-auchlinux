@@ -2,9 +2,57 @@
 
 Minimal **automated Arch Linux installation scripts** using `curl | bash`.
 
+> [!IMPORTANT]
+> **This repo is no longer maintained.** It was frozen in October 2026, because the
+> desktop is moving to **Quickshell** in a separate project. This Waybar-based version
+> won't get updates or fixes, and issues and pull requests won't be answered.
+> See [Project status](#-project-status) before you use it.
+
 > [!WARNING]
 > These scripts will **erase your selected disk** and configure partitions, **LUKS**, and **systemd-boot**.
 > Use only if you understand what the script does. **Test in a VM first.**
+
+---
+
+## 🧊 Project status
+
+**Frozen as of 21 October 2026.** Last used on Arch Linux with Hyprland **0.56.2** (Lua
+config) and the **linux-zen 7.2** kernel. Everything below describes that state; none
+of it will be updated.
+
+**What still makes sense to use**
+
+- [`install.sh`](install.sh): the base install (LUKS, systemd-boot, user and sudo
+  setup) doesn't depend on the desktop at all.
+- The hardening and system scripts listed under [Optional setups](#-optional-setups):
+  ufw firewall, encrypted DNS, sysctl hardening, zram.
+- Everything under [`config/`](config/), as reference for your own setup.
+
+**What's being replaced by Quickshell**
+
+- **Waybar**: the bar and its six layouts.
+- **SwayNC**: the notification centre and its quick-settings panel.
+- **The rofi menus**: the security hub, network, phone, wallpaper and power menus.
+- New parts that only the Quickshell version will have: an on-screen display for
+  volume and brightness, desktop widgets, and a new lock screen.
+
+**Expect it to break over time.** Arch is a rolling release. Hyprland's Lua config is
+new and changes between releases, and packages get renamed (`swww` already became
+`awww`). Nothing here will follow those changes.
+
+**Known issues at the freeze**
+
+- **Clone it to exactly `~/auchlinux`.** Several scripts, the `secscan` alias and the
+  weekly malware-scan service use that path.
+- **GUI apps that need admin rights fail without asking for a password.** The polkit
+  agent is installed but never started. Fix:
+  `systemctl --user enable --now hyprpolkitagent`.
+- **`yt-dlp` and `ffmpeg` aren't in the package list**, but the music and
+  phone-camera menus need them: `sudo pacman -S yt-dlp ffmpeg`.
+- **`scripts/vtube/vtube.sh setup` fails**: it installs through `paru`, which this
+  setup no longer uses.
+
+**Forks are welcome** under the [GPL-3.0](LICENSE).
 
 ---
 
@@ -176,7 +224,7 @@ Independent of each other, run whenever — after the steps above.
 | [`malware-scan.timer`](config/systemd/user/malware-scan.timer) | Weekly CVE + AUR-integrity scan (`scripts/malware-scanner.sh --quiet`); a notification only when something needs attention. Enabled by `apply-config.sh`. |
 | [`scripts/virt/virt-manager.sh`](scripts/virt/virt-manager.sh) | QEMU/KVM + virt-manager. `virt/kvm.sh` then builds throwaway VMs. |
 | [`scripts/steam/steam.sh`](scripts/steam/steam.sh) | Steam + Vulkan GPU drivers. |
-| [`scripts/ollama.sh`](scripts/ollama.sh) | Local LLMs (CPU-only): ollama, off at boot, memory-capped so a long session can't freeze the desktop. Which model to use: [`llm-findings.md`](llm-findings.md). |
+| [`scripts/ollama.sh`](scripts/ollama.sh) | Local LLMs (CPU-only): ollama, off at boot, memory-capped so a long session can't freeze the desktop. |
 | [`scripts/easyeffects/easyeffects.sh`](scripts/easyeffects/easyeffects.sh) | EasyEffects audio EQ + presets. |
 | [`scripts/vpn/vpn.sh`](scripts/vpn/README.md) | WireGuard VPN + waybar indicator. |
 | [`scripts/vtube/vtube.sh`](scripts/vtube/README.md) | VTube face-tracking pipeline. |
